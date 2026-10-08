@@ -38,6 +38,18 @@ const CONF = {
     { id: "polvo",  n: "Polvo texturizador",    p: 8900,  d: "Volumen y textura al instante.",       ic: "can",    c: "#d0d0c8" },
     { id: "after",  n: "After shave",           p: 7200,  d: "Calma y refresca después de la barba.", ic: "bottle", c: "#5aa0c8" }
   ],
+  fidelidad: { cada: 5, premio: "Corte gratis" }, // cada 5 visitas, la 6ª gratis
+  galeria: [ // k = estilo del dibujo de ejemplo; cuando haya fotos reales: { b, t, foto: "data:…" }
+    { b: "nico", t: "Mid fade + diseño", k: "design" },
+    { b: "nico", t: "Burst fade", k: "fade" },
+    { b: "nico", t: "Taper con textura", k: "crop" },
+    { b: "facu", t: "Clásico a tijera", k: "classic" },
+    { b: "facu", t: "Barba perfilada", k: "beard" },
+    { b: "facu", t: "Side part", k: "part" },
+    { b: "tomi", t: "Platinado", k: "platinum" },
+    { b: "tomi", t: "Claritos", k: "highlights" },
+    { b: "tomi", t: "Gris humo", k: "grey" }
+  ],
   demo: true // muestra turnos de ejemplo ocupados
 };
 
@@ -115,7 +127,7 @@ function turnosDemo(){
           const n = NOMBRES[Math.floor(hash(ds + m + b.id + "n") * NOMBRES.length)];
           const hp = hash(ds + m + "p"), pr = hp < .14 ? [{ id: CONF.productos[Math.floor(hp*100) % CONF.productos.length].id, q: 1 }] : [];
           const pt = pr.reduce((x,y)=>x + (CONF.productos.find(p=>p.id===y.id)?.p||0)*y.q, 0);
-          out.push({ id: "D" + ds.replace(/-/g,"") + b.id + m, b: b.id, s: sv, d: ds, h: toHM(m), dur, n, tel: "11" + String(Math.floor(hash(n+ds+m)*1e8)).padStart(8,"0"), p: servicio(sv).p, prods: pr, pt, nv: i < 0 && hash(ds+m+"nv") < .07, demo: true });
+          out.push({ id: "D" + ds.replace(/-/g,"") + b.id + m, b: b.id, s: sv, d: ds, h: toHM(m), dur, n, tel: "11" + String(Math.floor(hash(n+"tel")*1e8)).padStart(8,"0"), p: servicio(sv).p, prods: pr, pt, nv: i < 0 && hash(ds+m+"nv") < .07, demo: true });
           m += dur;
         } else m += CONF.paso;
       }
@@ -157,4 +169,13 @@ function slotsDelDia(DATA, ds, bId, dur){
 function diaAbierto(ds, bId){
   const bs = bId === "*" ? CONF.barberos : [barbero(bId)];
   return bs.some(b => horarioDe(b, ds));
+}
+
+/* ---------- fidelidad ---------- */
+const telKey = t => String(t || "").replace(/\D/g,"").slice(-8);
+/* visitas que cuentan: pasadas, no canceladas y que no figuren como "no vino" */
+function visitasPrevias(DATA, tel, antesDe, noVino = () => false){
+  const k = telKey(tel), cancel = new Set(DATA.snap.cancel || []);
+  if (!k) return 0;
+  return DATA.turnos.filter(t => telKey(t.tel) === k && !cancel.has(t.id) && !noVino(t) && (t.d + t.h) < antesDe).length;
 }

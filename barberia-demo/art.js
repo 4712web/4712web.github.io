@@ -41,3 +41,29 @@ const ICONOS = {
   Promos: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20.6 13.4 13.4 20.6a2 2 0 0 1-2.8 0L3 13V3h10l7.6 7.6a2 2 0 0 1 0 2.8z"/><circle cx="7.5" cy="7.5" r="1.5"/></svg>`,
   Color: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3s7 7.6 7 12a7 7 0 0 1-14 0c0-4.4 7-12 7-12z"/></svg>`
 };
+/* cortes de ejemplo (vista de atrás), se reemplazan por fotos reales */
+function corteSVG(g, i){
+  if (g.foto) return `<img src="${g.foto}" alt="${esc(g.t)}" loading="lazy">`;
+  const k = g.k, id = "c" + i, sk = ["#c99a6e","#a87449","#e0b48a"][i % 3];
+  const hc = k === "platinum" ? "#efece4" : k === "grey" ? "#9ea3a8" : "#1b1714";
+  if (k === "beard") return retratoSVG({ n: g.t, c: "#2a241c" }, 1);
+  const fadeTop = k === "classic" || k === "part" ? .95 : .92, fadeLow = k === "classic" || k === "part" ? .55 : 0;
+  const lowY = k === "fade" ? 72 : k === "crop" ? 66 : 80;
+  let top = `<path d="M24 58c0-26 16-40 36-40s36 14 36 40c-8-6-20-9-36-9s-28 3-36 9z" fill="${hc}"/>`;
+  if (k === "crop") top = `<path d="M25 56c0-24 15-37 35-37s35 13 35 37l-6-4-5 5-5-5-5 5-5-5-5 5-5-5-5 5-5-5-5 5-5-5z" fill="${hc}"/>`;
+  if (k === "classic" || k === "part") top = `<path d="M22 64c-2-30 14-47 38-47s40 17 38 47c-6-8-18-12-38-12s-32 4-38 12z" fill="${hc}"/>${k === "part" ? `<path d="M44 20c-4 10-6 20-6 30" stroke="${sk}" stroke-width="2.2" fill="none" stroke-linecap="round"/>` : ""}`;
+  let extra = "";
+  if (k === "design") extra = `<path d="M34 54c8 4 14 4 20-2M33 62c9 3 16 2 22-4" stroke="${sk}" stroke-width="1.8" fill="none" stroke-linecap="round"/>`;
+  if (k === "highlights") extra = `<path d="M38 24c2 8 2 16 0 24M52 19c1 9 1 18-1 28M66 19c2 9 2 18 0 28M80 24c1 8 1 16-1 24" stroke="#d9b45a" stroke-width="3" stroke-linecap="round" opacity=".9"/>`;
+  return `<svg viewBox="0 0 120 150" role="img" aria-label="${esc(g.t)}"><defs>
+    <radialGradient id="${id}b" cx=".5" cy=".35" r=".8"><stop offset="0" stop-color="#3a3022"/><stop offset="1" stop-color="#0b0a08"/></radialGradient>
+    <linearGradient id="${id}f" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${hc}" stop-opacity="${fadeTop}"/><stop offset="${(lowY-30)/60}" stop-color="${hc}" stop-opacity="${fadeLow ? fadeLow : .35}"/><stop offset="1" stop-color="${hc}" stop-opacity="${fadeLow}"/></linearGradient>
+    <clipPath id="${id}h"><ellipse cx="60" cy="62" rx="34" ry="40"/></clipPath></defs>
+    <rect width="120" height="150" fill="url(#${id}b)"/>
+    <path d="M6 150c4-26 26-40 54-40s50 14 54 40z" fill="#0b0a08"/><path d="M6 150c4-26 26-40 54-40s50 14 54 40" fill="none" stroke="#d9b45a" stroke-opacity=".35"/>
+    <rect x="46" y="88" width="28" height="28" rx="10" fill="${sk}"/>
+    <ellipse cx="26" cy="66" rx="6" ry="9" fill="${sk}"/><ellipse cx="94" cy="66" rx="6" ry="9" fill="${sk}"/>
+    <ellipse cx="60" cy="62" rx="34" ry="40" fill="${sk}"/>
+    <g clip-path="url(#${id}h)"><rect x="20" y="30" width="80" height="60" fill="url(#${id}f)"/></g>
+    ${top}${extra}</svg>`;
+}

@@ -68,6 +68,7 @@ header small{color:var(--muted);font-size:.78rem}
 .tc.canc{opacity:.45}
 .tc.canc .who{text-decoration:line-through}
 .gap{display:flex;justify-content:space-between;color:var(--faint);font-size:.8rem;padding:6px 12px;border:1px dashed var(--line);border-radius:12px}
+.tag.gift{background:linear-gradient(115deg,#94702a,#d9b45a,#f6e3a1);color:#1a1408}
 .tag{display:inline-block;font-size:.68rem;font-weight:800;padding:2px 7px;border-radius:6px;background:var(--sunk);color:var(--muted);margin-left:6px;vertical-align:2px}
 .empty{text-align:center;color:var(--muted);padding:28px 10px;border:1px dashed var(--line);border-radius:14px}
 .range{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-bottom:12px}
@@ -222,12 +223,18 @@ function renderAgenda(){
     const prods = (t.prods||[]).map(x => { const p = CONF.productos.find(y=>y.id===x.id); return p ? `${x.q} x ${p.n}` : ""; }).filter(Boolean).join(", ");
     const rec = `Hola ${t.n}! Te recordamos tu turno en ${CONF.nombre} 💈\n📅 ${fechaLarga(t.d)} a las ${t.h}\n✂️ ${sv.n} con ${b.n}\n📍 ${CONF.direccion}\n\nSi no podés venir, avisanos 🙏`;
     return `<article class="tc${c?" canc":""}" style="--bc:${b.c}"><div class="hr">${t.h}<small>${t.dur||30} min</small></div>
-      <div><div class="who">${esc(t.n)}${t.demo?"":`<span class="tag">web</span>`}${c?`<span class="tag">cancelado</span>`:""}</div><div class="what">${esc(sv.n)} · <b style="color:${b.c}">${esc(b.n)}</b></div>${prods?`<div class="what">🧴 ${esc(prods)}</div>`:""}<div class="pz">${fmt((t.p||0)+(t.pt||0))}</div></div>
+      <div><div class="who">${esc(t.n)}${t.demo?"":`<span class="tag">web</span>`}${c?`<span class="tag">cancelado</span>`:""}${fidTag(t)}</div><div class="what">${esc(sv.n)} · <b style="color:${b.c}">${esc(b.n)}</b></div>${prods?`<div class="what">🧴 ${esc(prods)}</div>`:""}<div class="pz">${fmt((t.p||0)+(t.pt||0))}</div></div>
       ${c ? "" : `<div class="acts"><a class="wa" href="https://wa.me/549${String(t.tel||"").replace(/\D/g,"").replace(/^0/,"").replace(/^(54)?9?/,"")}?text=${encodeURIComponent(rec)}" target="_blank" rel="noopener" aria-label="Avisar por WhatsApp">WhatsApp</a>
         <button data-st="vino" data-id="${t.id}" aria-pressed="${s==="vino"}">✅ Vino</button><button data-st="novino" data-id="${t.id}" aria-pressed="${s==="novino"}">❌ No vino</button>
         ${past ? `<span></span>` : `<button class="del" data-cancel="${t.id}" aria-label="Cancelar turno">Cancelar</button>`}</div>`}</article>`;
   }).join("");
   $("#list").innerHTML = out;
+}
+function fidTag(t){
+  const F = CONF.fidelidad; if (!F || !t.tel) return "";
+  const v = visitasPrevias({ turnos: DATA.turnos, snap: snapNow() }, t.tel, t.d + t.h, x => st[x.id] === "novino");
+  if (v >= F.cada && v % F.cada === 0) return `<span class="tag gift">🎁 Le toca gratis</span>`;
+  return v ? `<span class="tag">★ ${v % F.cada}/${F.cada}</span>` : `<span class="tag">nuevo</span>`;
 }
 const horarioAbierto = ds => !!CONF.horarios[parseYmd(ds).getDay()];
 document.addEventListener("click", e => {
