@@ -114,6 +114,42 @@ details pre{white-space:pre-wrap;font-family:ui-monospace,Menlo,monospace;font-s
 .empty{text-align:center;color:var(--muted);padding:30px 10px}
 .note{color:var(--faint);font-size:.75rem;text-align:center;margin-top:24px}
 .err{background:rgba(255,122,122,.08);border:1px solid rgba(255,122,122,.4);color:#ffb3b3;border-radius:14px;padding:12px 14px;margin-top:12px;font-size:.88rem}
+.kpi .delta{display:inline-block;margin-left:6px;font-size:.78rem;font-weight:800;padding:2px 7px;border-radius:999px;vertical-align:middle}
+.delta.up{background:rgba(57,210,106,.14);color:var(--acc)} .delta.down{background:rgba(255,122,122,.12);color:#ff9a9a} .delta.eq{background:var(--sunk);color:var(--muted)}
+.star{display:grid;grid-template-columns:auto 1fr;gap:14px;align-items:center}
+.star .ic{width:54px;height:54px;border-radius:16px;background:linear-gradient(135deg,#2a2a2e,#151517);border:1px solid var(--line);display:grid;place-items:center;font-size:1.6rem}
+.star small{color:var(--acc);font-weight:800;font-size:.72rem;letter-spacing:.1em;text-transform:uppercase}
+.star b{display:block;font-family:var(--display);font-weight:400;font-size:1.5rem;letter-spacing:.02em;line-height:1.05;margin:2px 0}
+.star span{color:var(--muted);font-size:.85rem}
+.neto .ln{display:flex;justify-content:space-between;gap:10px;padding:7px 0;border-bottom:1px dashed var(--line);font-size:.92rem}
+.neto .ln span:last-child{font-weight:700}
+.neto .ln.minus span:last-child{color:#ff9a9a}
+.neto .ln.res{border-bottom:none;padding-top:12px;font-size:1.15rem;font-weight:800}
+.neto .ln.res span:last-child{color:var(--acc);font-size:1.4rem}
+.neto .hint{margin-top:10px;color:var(--muted);font-size:.82rem;background:var(--sunk);border-radius:10px;padding:10px}
+.neto .hint button{color:var(--acc);font-weight:800;text-decoration:underline;padding:0}
+.grid2{display:grid;grid-template-columns:1fr;gap:0}
+@media (min-width:560px){.grid2{grid-template-columns:1fr 1fr;gap:12px}.grid2 .card{margin-top:12px}}
+.brk{display:grid;gap:9px}
+.brow{display:grid;grid-template-columns:1fr auto;gap:2px 10px;font-size:.88rem}
+.brow .lab{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-weight:600}
+.brow .val{font-weight:800;text-align:right}
+.brow .meter{grid-column:1/-1;height:6px;border-radius:3px;background:var(--sunk);overflow:hidden}
+.brow .meter span{display:block;height:100%;border-radius:3px;background:var(--acc)}
+.brow .pct{color:var(--muted);font-weight:500;margin-left:4px}
+.tools{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:12px}
+.sheet{position:fixed;inset:0;z-index:20;background:rgba(0,0,0,.7);display:flex;align-items:flex-end;justify-content:center}
+.sheet .pn{background:var(--bg);width:100%;max-width:720px;max-height:92vh;overflow:auto;border-radius:22px 22px 0 0;border-top:1px solid var(--line);padding:0 16px 24px}
+.sheet .ph{position:sticky;top:0;background:var(--bg);display:flex;justify-content:space-between;align-items:center;padding:16px 0 10px;z-index:2}
+.sheet .ph h3{margin:0;font-size:1.05rem}
+.x{width:36px;height:36px;border-radius:999px;background:var(--sunk)}
+.fld{display:grid;gap:6px;margin-top:12px;font-size:.84rem;font-weight:600;color:var(--muted)}
+.fld input{font-size:16px;padding:10px 12px;border-radius:11px;border:1.5px solid var(--line);background:var(--surface)}
+.crow{display:grid;grid-template-columns:1fr 130px;gap:10px;align-items:center;padding:8px 0;border-bottom:1px solid var(--line);font-size:.88rem}
+.crow input{font-size:16px;padding:9px 10px;border-radius:10px;border:1.5px solid var(--line);background:var(--surface);width:100%;text-align:right}
+.crow small{display:block;color:var(--faint)}
+.sec{margin:20px 0 4px;font-size:.78rem;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--faint)}
+.toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:var(--fg);color:var(--bg);font-weight:700;padding:10px 16px;border-radius:999px;z-index:30;font-size:.88rem}
 @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
 </style>
 </head>
@@ -141,12 +177,18 @@ details pre{white-space:pre-wrap;font-family:ui-monospace,Menlo,monospace;font-s
   <div id="errBox"></div>
 
   <div class="kpis">
-    <div class="kpi hero"><small>Ventas</small><b class="num" id="kVentas">$ 0</b><span class="sub" id="kVentasSub"></span></div>
-    <div class="kpi"><small>Pedidos</small><b class="num" id="kPed">0</b></div>
+    <div class="kpi hero"><small>Ventas por la web</small><b class="num"><span id="kVentas">$ 0</span><span class="delta" id="kDelta"></span></b><span class="sub" id="kVentasSub"></span></div>
+    <div class="kpi"><small>Pedidos</small><b class="num" id="kPed">0</b><span class="sub" id="kPedSub"></span></div>
     <div class="kpi"><small>Ticket promedio</small><b class="num" id="kTicket">$ 0</b></div>
+    <div class="kpi"><small>Unidades vendidas</small><b class="num" id="kUni">0</b></div>
+    <div class="kpi"><small>Ganancia neta</small><b class="num" id="kNeto">—</b><span class="sub" id="kNetoSub"></span></div>
     <div class="kpi"><small>Por cobrar</small><b class="num" id="kCobrar">$ 0</b><span class="sub" id="kCobrarSub"></span></div>
     <div class="kpi"><small>Cobrado</small><b class="num" id="kCobrado">$ 0</b></div>
   </div>
+
+  <div class="card" id="starCard"></div>
+
+  <div class="card neto" id="netoCard"></div>
 
   <div class="card">
     <h2>Ventas por día <span>últimos 14 días</span></h2>
@@ -158,12 +200,39 @@ details pre{white-space:pre-wrap;font-family:ui-monospace,Menlo,monospace;font-s
     <div class="top" id="top"></div>
   </div>
 
+  <div class="grid2">
+    <div class="card"><h2>Medios de pago</h2><div class="brk" id="bPago"></div></div>
+    <div class="card"><h2>Tipo de entrega</h2><div class="brk" id="bEnt"></div></div>
+    <div class="card"><h2>Talles más pedidos</h2><div class="brk" id="bTalle"></div></div>
+    <div class="card"><h2>Mejores clientes</h2><div class="brk" id="bCli"></div></div>
+    <div class="card"><h2>Ventas por día de la semana</h2><div class="brk" id="bDia"></div></div>
+    <div class="card"><h2>Horario de los pedidos</h2><div class="brk" id="bHora"></div></div>
+  </div>
+
+  <div class="tools">
+    <button class="btn ghost" id="share">📤 Compartir resumen</button>
+    <button class="btn ghost" id="cfgBtn">⚙️ Costos y comisiones</button>
+  </div>
+
   <div class="filt" role="group" aria-label="Estado" id="filt"></div>
   <input class="search" id="q" type="search" placeholder="Buscar por cliente o producto" aria-label="Buscar">
   <div class="orders" id="orders"></div>
 
-  <p class="note">Los estados (pendiente, enviado, cobrado) se guardan en este celular.</p>
+  <p class="note">Los estados y los costos se guardan en este celular. Los pedidos llegan solos desde la tienda.</p>
 </main>
+
+<div class="sheet" id="cfg" hidden><div class="pn" role="dialog" aria-modal="true" aria-label="Costos y comisiones">
+  <div class="ph"><h3>Costos y comisiones</h3><button class="x" data-close aria-label="Cerrar">✕</button></div>
+  <p style="color:var(--muted);font-size:.88rem;margin:0">Con estos datos el panel calcula tu <b style="color:var(--fg)">ganancia neta</b>. Se cargan una vez y quedan guardados.</p>
+  <div class="sec">Comisiones</div>
+  <label class="fld">Comisión Mercado Pago (%)<input id="cMp" inputmode="decimal" placeholder="Ej: 6,29"></label>
+  <label class="fld">Comisión tarjeta (%)<input id="cTj" inputmode="decimal" placeholder="Ej: 6,29"></label>
+  <label class="fld">Abono mensual de la página ($)<input id="cWeb" inputmode="numeric" placeholder="Ej: 15000"></label>
+  <div class="sec">Costo de cada producto (lo que te sale a vos)</div>
+  <div id="cProds"></div>
+  <button class="btn" style="width:100%;margin-top:16px" data-close>Guardar</button>
+</div></div>
+<div class="toast" id="toast" hidden></div>
 
 <script>
 /* ---------- configuración del cliente ---------- */
@@ -180,7 +249,9 @@ const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt
 const fmt = n => "$ " + Math.round(n||0).toLocaleString("es-AR");
 const ls = { get(k){ try { return JSON.parse(localStorage.getItem(k) || "null"); } catch { return null; } }, set(k,v){ try { localStorage.setItem(k, JSON.stringify(v)); } catch {} } };
 const K_ST = "panel_estados_" + CFG.key, K_PIN = "panel_ok_" + CFG.key;
-const STATES = [["pendiente","⏳","Pendiente"],["enviado","📦","Enviado"],["cobrado","✅","Cobrado"]];
+const STATES = [["pendiente","⏳","Pendiente"],["enviado","📦","Enviado"],["cobrado","✅","Cobrado"],["cancelado","✖️","Cancelado"]];
+const K_COST = "panel_costos_" + CFG.key;
+let cost = Object.assign({mp:0,tj:0,web:15000,prod:{}}, ls.get(K_COST)||{});
 
 let orders = [], range = "mes", filt = "todos", states = ls.get(K_ST) || {};
 
@@ -290,23 +361,89 @@ document.querySelectorAll(".range button").forEach(btn => btn.onclick = () => {
   range = btn.dataset.r; document.querySelectorAll(".range button").forEach(x=>x.setAttribute("aria-pressed", x===btn)); render();
 });
 const stOf = o => states[o.id] || "pendiente";
+const live = o => stOf(o) !== "cancelado";
+function prevRange(){
+  const now = new Date();
+  if (range === "todo") return null;
+  if (range === "hoy"){ const y = dayKey(new Date(now - 864e5)); return o => dayKey(o.fecha) === y; }
+  if (range === "7") return o => { const d = now - o.fecha; return d > 7*864e5 && d <= 14*864e5; };
+  const pm = new Date(now.getFullYear(), now.getMonth()-1, 15), k = dayKey(pm).slice(0,7), dom = +dayKey(now).slice(8,10);
+  return o => dayKey(o.fecha).slice(0,7) === k && +dayKey(o.fecha).slice(8,10) <= dom;
+}
+const rangeLabel = () => ({hoy:"hoy",7:"últimos 7 días",mes:"este mes",todo:"desde el inicio"})[range];
+const prevLabel = () => ({hoy:"ayer",7:"los 7 días anteriores",mes:"el mes pasado"})[range];
+const pctNum = s => +String(s||"").replace(",",".") || 0;
+function payKind(p){ p = (p||"").toLowerCase(); return p.includes("mercado") ? "Mercado Pago" : p.includes("transfer") ? "Transferencia" : p.includes("tarjeta") ? "Tarjeta" : p.includes("efectivo") ? "Efectivo" : (p ? p.split("(")[0].trim() : "Sin dato"); }
+function entKind(e){ e = (e||"").toLowerCase(); return e.includes("correo") ? "Correo Argentino" : e.includes("punto") ? "Punto de encuentro" : e.includes("retiro") ? "Retiro en el local" : e.includes("envío") || e.includes("envio") || e.includes("moto") ? "Envío por la zona" : (e ? e.split("(")[0].trim() : "Sin dato"); }
+function money2(n){ return fmt(n); }
+function calcNeto(R){
+  const ventas = R.reduce((a,o)=>a+o.total,0);
+  let cmv = 0, sinCosto = new Set();
+  R.forEach(o => o.items.forEach(it => { const c = cost.prod[it.nombre]; if (c) cmv += c*it.q; else sinCosto.add(it.nombre); }));
+  const com = R.reduce((a,o)=>{ const k = payKind(o.pago); const pc = k==="Mercado Pago" ? pctNum(cost.mp) : k==="Tarjeta" ? pctNum(cost.tj) : 0; return a + o.total*pc/100; },0);
+  const days = range==="hoy" ? 1 : range==="7" ? 7 : range==="mes" ? 30 : Math.max(30, Math.ceil((Date.now() - Math.min(...orders.map(o=>+o.fecha), Date.now()))/864e5));
+  const web = (+cost.web||0) * days / 30;
+  return { ventas, cmv, com, web, neto: ventas - cmv - com - web, sinCosto: [...sinCosto], hasCost: Object.keys(cost.prod).some(k=>cost.prod[k]>0) };
+}
+function bars(el, rows, opts={}){
+  const tot = rows.reduce((a,r)=>a+r.v,0), max = Math.max(1, ...rows.map(r=>r.v));
+  el.innerHTML = rows.length ? rows.map(r=>`<div class="brow"><span class="lab">${esc(r.k)}</span><span class="val num">${opts.money?fmt(r.v):r.v+(opts.unit||"")}<span class="pct">${tot?Math.round(r.v/tot*100):0}%</span></span><div class="meter"><span style="width:${r.v/max*100}%"></span></div></div>`).join("") : `<div class="empty" style="padding:6px">Sin datos todavía.</div>`;
+}
+const group = (R, keyFn, valFn) => { const m = {}; R.forEach(o => { const k = keyFn(o); if (k==null) return; m[k] = (m[k]||0) + valFn(o); }); return Object.entries(m).map(([k,v])=>({k,v})).sort((a,b)=>b.v-a.v); };
 
 /* ---------- render ---------- */
 function render(){
-  const R = orders.filter(inRange);
+  const All = orders.filter(inRange), R = All.filter(live);
   const ventas = R.reduce((a,o)=>a+o.total,0), cob = R.filter(o=>stOf(o)==="cobrado"), porC = R.filter(o=>stOf(o)!=="cobrado");
   $("#kVentas").textContent = fmt(ventas);
-  $("#kVentasSub").textContent = {hoy:"hoy",7:"últimos 7 días",mes:"este mes",todo:"desde el inicio"}[range];
-  $("#kPed").textContent = R.length;
+  $("#kVentasSub").textContent = rangeLabel();
+  const pf = prevRange(), dl = $("#kDelta");
+  if (pf){ const pv = orders.filter(o=>live(o)&&pf(o)).reduce((a,o)=>a+o.total,0);
+    if (pv){ const d = Math.round((ventas-pv)/pv*100); dl.className = "delta " + (d>0?"up":d<0?"down":"eq"); dl.textContent = (d>0?"▲ +":d<0?"▼ ":"")+d+"%"; dl.title = "vs " + prevLabel(); $("#kVentasSub").textContent = rangeLabel() + " · vs " + prevLabel() + ": " + fmt(pv); }
+    else { dl.className = "delta"; dl.textContent = ""; } } else { dl.className = "delta"; dl.textContent = ""; }
+  $("#kPed").textContent = R.length; const canc = All.length - R.length; $("#kPedSub").textContent = canc ? canc + " cancelado" + (canc>1?"s":"") : "";
   $("#kTicket").textContent = fmt(R.length ? ventas/R.length : 0);
+  $("#kUni").textContent = R.reduce((a,o)=>a+o.items.reduce((b,i)=>b+i.q,0),0);
   $("#kCobrar").textContent = fmt(porC.reduce((a,o)=>a+o.total,0)); $("#kCobrarSub").textContent = porC.length + " pedido" + (porC.length===1?"":"s");
   $("#kCobrado").textContent = fmt(cob.reduce((a,o)=>a+o.total,0));
-  drawChart(); drawTop(R); drawList(R);
+  const N = calcNeto(R);
+  $("#kNeto").textContent = N.hasCost ? fmt(N.neto) : "—"; $("#kNetoSub").textContent = N.hasCost ? (ventas ? Math.round(N.neto/ventas*100) + "% de margen" : "") : "cargá los costos";
+  drawStar(R); drawNeto(N); drawChart(); drawTop(R);
+  bars($("#bPago"), group(R, o=>payKind(o.pago), o=>o.total), {money:true});
+  bars($("#bEnt"), group(R, o=>entKind(o.entrega), ()=>1), {unit:" ped."});
+  const tm = {}; R.forEach(o=>o.items.forEach(it=>{ const t = (it.op||"").split(",").map(x=>x.trim()).find(x=>/^(XXS|XS|S|M|L|XL|XXL|XXXL|\d{2})$/i.test(x)); if (t) tm[t.toUpperCase()] = (tm[t.toUpperCase()]||0) + it.q; }));
+  const ord = ["XXS","XS","S","M","L","XL","XXL","XXXL"];
+  bars($("#bTalle"), Object.entries(tm).map(([k,v])=>({k,v})).sort((a,b)=>b.v-a.v), {unit:" u."});
+  bars($("#bCli"), group(R, o=>o.cliente, o=>o.total).slice(0,5), {money:true});
+  const DS = ["Domingo","Lunes","Martes","Miércoles","Jueves","Viernes","Sábado"];
+  const dw = DS.map((k,i)=>({k, v:R.filter(o=>+new Date(o.fecha.toLocaleString("en-US",{timeZone:TZ})).getDay()===i).reduce((a,o)=>a+o.total,0)}));
+  bars($("#bDia"), [1,2,3,4,5,6,0].map(i=>dw[i]), {money:true});
+  const H = [["Mañana (6 a 12)",6,12],["Tarde (12 a 18)",12,18],["Noche (18 a 24)",18,24],["Madrugada (0 a 6)",0,6]];
+  bars($("#bHora"), H.map(([k,a,b])=>({k, v:R.filter(o=>{ const h = +o.fecha.toLocaleString("en-US",{timeZone:TZ,hour:"2-digit",hour12:false})%24; return h>=a && h<b; }).length})), {unit:" ped."});
+  drawList(All);
+}
+function topProducts(R){
+  const m = {};
+  R.forEach(o => o.items.forEach(it => { const k = it.nombre; m[k] = m[k] || {n:k,q:0,v:0}; m[k].q += it.q; m[k].v += it.sub; }));
+  return Object.values(m).sort((a,b)=>b.q-a.q || b.v-a.v);
+}
+function drawStar(R){
+  const T = topProducts(R), tot = R.reduce((a,o)=>a+o.total,0);
+  $("#starCard").innerHTML = T.length ? `<div class="star"><div class="ic">⭐</div><div><small>Producto estrella · ${rangeLabel()}</small><b>${esc(T[0].n)}</b><span>${T[0].q} unidad${T[0].q>1?"es":""} · ${fmt(T[0].v)} · ${tot?Math.round(T[0].v/tot*100):0}% de las ventas</span></div></div>` : `<div class="star"><div class="ic">⭐</div><div><small>Producto estrella</small><b>—</b><span>Todavía no hay ventas en este período.</span></div></div>`;
+}
+function drawNeto(N){
+  $("#netoCard").innerHTML = `<h2>Cuentas del período <span>${rangeLabel()}</span></h2>
+    <div class="ln"><span>Ventas por la web</span><span class="num">${fmt(N.ventas)}</span></div>
+    <div class="ln minus"><span>Costo de la mercadería</span><span class="num">− ${fmt(N.cmv)}</span></div>
+    <div class="ln minus"><span>Comisiones (MP / tarjeta)</span><span class="num">− ${fmt(N.com)}</span></div>
+    <div class="ln minus"><span>Abono de la página</span><span class="num">− ${fmt(N.web)}</span></div>
+    <div class="ln res"><span>Ganancia neta</span><span class="num">${fmt(N.neto)}</span></div>
+    ${!N.hasCost ? `<div class="hint">Para que la ganancia sea real, cargá cuánto te cuesta cada producto. <button data-cfg>Cargar costos</button></div>` : N.sinCosto.length ? `<div class="hint">Faltan costos de: ${N.sinCosto.map(esc).join(", ")}. <button data-cfg>Completar</button></div>` : ""}`;
 }
 function drawChart(){
   const days = [], now = new Date();
   for (let i=13;i>=0;i--){ const d = new Date(now - i*864e5); days.push({k:dayKey(d), d, v:0}); }
-  orders.forEach(o => { const x = days.find(d=>d.k===dayKey(o.fecha)); if (x) x.v += o.total; });
+  orders.filter(live).forEach(o => { const x = days.find(d=>d.k===dayKey(o.fecha)); if (x) x.v += o.total; });
   const W = 340, H = 150, pad = 18, max = Math.max(1, ...days.map(d=>d.v)), bw = (W - 4) / days.length;
   const nice = Math.pow(10, Math.floor(Math.log10(max))), top = Math.ceil(max/nice)*nice;
   let s = `<line class="grid" x1="0" x2="${W}" y1="${H-pad}" y2="${H-pad}"/>`;
@@ -324,9 +461,7 @@ function drawChart(){
   box.onpointermove = show; box.onpointerdown = show; box.onpointerleave = () => tip.hidden = true;
 }
 function drawTop(R){
-  const m = {};
-  R.forEach(o => o.items.forEach(it => { const k = it.nombre; m[k] = m[k] || {n:k,q:0,v:0}; m[k].q += it.q; m[k].v += it.sub; }));
-  const L = Object.values(m).sort((a,b)=>b.q-a.q || b.v-a.v).slice(0,5), max = Math.max(1, ...L.map(x=>x.q));
+  const L = topProducts(R).slice(0,5), max = Math.max(1, ...L.map(x=>x.q));
   $("#topSub").textContent = L.length ? "por unidades" : "";
   $("#top").innerHTML = L.length ? L.map((x,i)=>`<div class="trow"><i>${i+1}</i><div class="nm"><div>${esc(x.n)}</div><div class="meter"><span style="width:${x.q/max*100}%"></span></div></div><b class="num">${x.q} u.</b></div>`).join("") : `<div class="empty" style="padding:10px">Todavía no hay ventas en este período.</div>`;
 }
@@ -349,6 +484,28 @@ document.addEventListener("click", e => {
   const b = e.target.closest(".st button"); if (b){ states[b.dataset.id] = b.dataset.s; ls.set(K_ST, states); render(); }
 });
 $("#q").addEventListener("input", () => drawList(orders.filter(inRange)));
+/* ---------- costos ---------- */
+function openCfg(){
+  $("#cMp").value = cost.mp || ""; $("#cTj").value = cost.tj || ""; $("#cWeb").value = cost.web || "";
+  const names = [...new Set([...orders.flatMap(o=>o.items.map(i=>i.nombre)), ...Object.keys(cost.prod)])].sort();
+  $("#cProds").innerHTML = names.length ? names.map(n=>{ const pv = orders.flatMap(o=>o.items).find(i=>i.nombre===n); return `<div class="crow"><span>${esc(n)}${pv?`<small>Precio de venta: ${fmt(pv.sub/pv.q)}</small>`:""}</span><input inputmode="numeric" data-prod="${esc(n)}" value="${cost.prod[n]||""}" placeholder="$ costo"></div>`; }).join("") : `<p style="color:var(--muted);font-size:.85rem">Cuando entren pedidos, acá van a aparecer los productos para cargar su costo.</p>`;
+  $("#cfg").hidden = false;
+}
+function saveCfg(){
+  cost.mp = $("#cMp").value.trim(); cost.tj = $("#cTj").value.trim(); cost.web = +String($("#cWeb").value).replace(/\D/g,"") || 0;
+  document.querySelectorAll("[data-prod]").forEach(i => { const v = +String(i.value).replace(/\D/g,""); if (v) cost.prod[i.dataset.prod] = v; else delete cost.prod[i.dataset.prod]; });
+  ls.set(K_COST, cost); $("#cfg").hidden = true; render(); toast("Costos guardados");
+}
+$("#cfgBtn").onclick = openCfg;
+document.addEventListener("click", e => { if (e.target.closest("[data-cfg]")) openCfg(); if (e.target.closest("#cfg [data-close]")) saveCfg(); if (e.target.id === "cfg") saveCfg(); });
+function toast(t){ const el = $("#toast"); el.textContent = t; el.hidden = false; clearTimeout(toast.t); toast.t = setTimeout(()=>el.hidden=true, 1800); }
+/* ---------- compartir resumen ---------- */
+$("#share").onclick = async () => {
+  const R = orders.filter(inRange).filter(live), N = calcNeto(R), T = topProducts(R);
+  const txt = `📊 *${CFG.nombre} · Resumen ${rangeLabel()}*\n\n💰 Ventas por la web: ${fmt(N.ventas)}\n🧾 Pedidos: ${R.length}\n🎟️ Ticket promedio: ${fmt(R.length?N.ventas/R.length:0)}\n${T[0]?`⭐ Más vendido: ${T[0].n} (${T[0].q} u.)\n`:""}${N.hasCost?`✅ Ganancia neta: ${fmt(N.neto)} (${N.ventas?Math.round(N.neto/N.ventas*100):0}%)\n`:""}\nHecho con 4712 Web`;
+  try { if (navigator.share) { await navigator.share({text:txt}); return; } } catch (e) { if (e && e.name === "AbortError") return; }
+  try { await navigator.clipboard.writeText(txt); toast("Resumen copiado"); } catch { window.open("https://wa.me/?text="+encodeURIComponent(txt), "_blank"); }
+};
 
 if (ls.get(K_PIN)) unlock(); else $("#pin").focus();
 </script>
