@@ -1,4 +1,4 @@
-<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{box-sizing:border-box}body{margin:0;padding:0}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body style="margin:0"><title>Chulos Indumentaria Tienda</title>
+<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{box-sizing:border-box}body{margin:0;padding:0}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body><title>Chulos Indumentaria Tienda</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Anton&family=Permanent+Marker&family=Figtree:wght@400;500;600;700&display=swap">
 <style>
@@ -893,9 +893,22 @@ $("#send").addEventListener("click", e => {
   if ($("#send").getAttribute("aria-disabled")==="true"){ e.preventDefault(); return; }
   const f = new Date().toLocaleDateString("es-AR",{timeZone:TZ,day:"numeric",month:"short"});
   ls.set(LS_LAST,{cart:cart.map(l=>({...l})),fecha:f}); saveCliente();
+  registrarPedido();
   setTimeout(showDone, 300);
 });
 
+/* ---------- registro automático de pedidos (Google Forms) ---------- */
+const FORM_URL = "https://docs.google.com/forms/d/e/1FAIpQLSeC_Gk4aiUURCfHLs-Fbfj10Dub1nIS2Ii70OcaRJrnlfIwFw/formResponse";
+function registrarPedido(){
+  try {
+    const d = new URLSearchParams();
+    d.append("entry.2021034120", buildMsg().replace(/\*/g,""));
+    d.append("entry.1095410951", String(total()));
+    d.append("entry.1737521343", ($("#cName").value||"").trim());
+    const ok = navigator.sendBeacon && navigator.sendBeacon(FORM_URL, d);
+    if (!ok) fetch(FORM_URL, {method:"POST", mode:"no-cors", body:d, keepalive:true}).catch(()=>{});
+  } catch {}
+}
 /* ================= MODO DUEÑO ================= */
 let otab = "prod", dirty = false, artCap = null, pickTarget = null;
 function setDirty(v){ dirty = v; $("#oPublish").textContent = dirty ? "Publicar cambios" : "Publicar"; }
