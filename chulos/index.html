@@ -1068,10 +1068,56 @@ $("#ownClose").onclick = () => { $("#own").hidden = true; };
   } catch {}
 })();
 
+/* ================= CAMBIOS DEL DUEÑO (desde el panel, con firma) ================= */
+const PUB_KEY = "v97qzcWqwlEBq5o7HQVF8Lb1H5RjA2WHpML5yJci-4w";
+const SHEET = { id: "1W7bLBLQev6xfisgqklAOX-M-bwlv_es_RpVmePuaLCY", gid: "245098590" };
+const BASE = JSON.parse(ORIGINAL_JSON);
+const b64u = s => Uint8Array.from(atob(s.replace(/-/g,"+").replace(/_/g,"/").padEnd(Math.ceil(s.length/4)*4,"=")), c => c.charCodeAt(0));
+async function verifyCambio(txt){
+  const m = String(txt).match(/^CAMBIO (\{[\s\S]*\}) FIRMA ([A-Za-z0-9_-]+)\s*$/); if (!m) return null;
+  try {
+    const k = await crypto.subtle.importKey("raw", b64u(PUB_KEY), {name:"Ed25519"}, false, ["verify"]);
+    return (await crypto.subtle.verify({name:"Ed25519"}, k, b64u(m[2]), new TextEncoder().encode(m[1]))) ? JSON.parse(m[1]) : null;
+  } catch { return null; }
+}
+function applyCambio(s){
+  for (const x of s.p || []){
+    const p = byId(x.id), b = BASE.productos.find(q => q.id === x.id); if (!p || !b) continue;
+    if (x.bp === b.precio && x.precio > 0) p.precio = x.precio;
+    if (x.ba === (b.antes || 0)){ if (x.antes) p.antes = x.antes; else delete p.antes; }
+    if (x.bs === !!b.sinStock){ if (x.sin) p.sinStock = true; else delete p.sinStock; }
+    if (x.oc) p._oc = true;
+  }
+  D.productos = D.productos.filter(p => !p._oc);
+  if (s.c){ if (typeof s.c.aviso === "string") C().aviso = s.c.aviso; if ("pausado" in s.c) C().pausado = !!s.c.pausado; }
+}
+function loadCambios(conQuery = true){
+  if (window.claude?.use) return;
+  const cb = "__cmb" + Date.now(), sc = document.createElement("script");
+  const done = () => { delete window[cb]; sc.remove(); };
+  window[cb] = async res => {
+    done();
+    if (res.status === "error"){ if (conQuery) loadCambios(false); return; }
+    try {
+      let best = null;
+      for (const r of res.table?.rows || []) for (const c of r.c || []){
+        if (!c || typeof c.v !== "string" || !c.v.startsWith("CAMBIO ")) continue;
+        const v = await verifyCambio(c.v); if (v && (!best || v.t > best.t)) best = v;
+      }
+      if (best){ applyCambio(best); cleanCart(); refreshCustomer(); }
+    } catch {}
+  };
+  sc.onerror = done;
+  const tq = conQuery ? "&tq=" + encodeURIComponent("select B where B starts with 'CAMBIO' order by A desc limit 10") : "";
+  sc.src = `https://docs.google.com/spreadsheets/d/${SHEET.id}/gviz/tq?gid=${SHEET.gid}${tq}&tqx=out:json;responseHandler:${cb}&_=${Date.now()}`;
+  document.head.appendChild(sc);
+}
+
 /* ---------- inicio ---------- */
 loadCliente();
 refreshCustomer();
 setInterval(renderHead, 60000);
+loadCambios();
 
 /* ---------- graffitis y $ neón ---------- */
 (() => {

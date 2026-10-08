@@ -149,6 +149,23 @@ details pre{white-space:pre-wrap;font-family:ui-monospace,Menlo,monospace;font-s
 .crow input{font-size:16px;padding:9px 10px;border-radius:10px;border:1.5px solid var(--line);background:var(--surface);width:100%;text-align:right}
 .crow small{display:block;color:var(--faint)}
 .sec{margin:20px 0 4px;font-size:.78rem;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--faint)}
+.pbtn{width:100%;margin-top:12px;padding:16px;font-size:1rem}
+.prow{display:grid;grid-template-columns:56px 1fr;gap:10px 12px;padding:14px 0;border-bottom:1px solid var(--line)}
+.prow.off{opacity:.55}
+.prow img,.prow .noimg{width:56px;height:56px;border-radius:12px;object-fit:cover;background:var(--sunk)}
+.prow .nm b{display:block;font-size:.92rem;line-height:1.2}
+.prow .nm small{color:var(--faint);font-size:.75rem}
+.prow .flds{grid-column:1/-1;display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.prow label{display:grid;gap:4px;font-size:.74rem;font-weight:700;color:var(--muted)}
+.prow input{font-size:16px;padding:9px 10px;border-radius:10px;border:1.5px solid var(--line);background:var(--surface);width:100%}
+.tg2{grid-column:1/-1;display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.tgl{padding:9px 6px;border-radius:10px;background:var(--sunk);font-weight:700;font-size:.8rem;color:var(--muted);border:1.5px solid transparent}
+.tgl[aria-pressed="true"]{border-color:var(--acc);color:var(--acc);background:rgba(57,210,106,.1)}
+.tgl.bad[aria-pressed="true"]{border-color:#ff7a7a;color:#ff9a9a;background:rgba(255,122,122,.1)}
+.pub{position:sticky;bottom:0;background:var(--bg);padding:12px 0 4px;border-top:1px solid var(--line);margin-top:8px}
+.pst{font-size:.84rem;color:var(--muted);text-align:center;margin-top:8px;min-height:1.2em}
+.pst.ok{color:var(--acc)} .pst.bad{color:#ff9a9a}
+.swrow{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-top:12px;padding:12px;background:var(--surface);border:1px solid var(--line);border-radius:12px;font-size:.9rem;font-weight:600}
 .toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:var(--fg);color:var(--bg);font-weight:700;padding:10px 16px;border-radius:999px;z-index:30;font-size:.88rem}
 @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
 </style>
@@ -209,6 +226,7 @@ details pre{white-space:pre-wrap;font-family:ui-monospace,Menlo,monospace;font-s
     <div class="card"><h2>Horario de los pedidos</h2><div class="brk" id="bHora"></div></div>
   </div>
 
+  <button class="btn pbtn" id="prodBtn">🛍️ Precios, stock y avisos de la tienda</button>
   <div class="tools">
     <button class="btn ghost" id="share">📤 Compartir resumen</button>
     <button class="btn ghost" id="cfgBtn">⚙️ Costos y comisiones</button>
@@ -231,6 +249,20 @@ details pre{white-space:pre-wrap;font-family:ui-monospace,Menlo,monospace;font-s
   <div class="sec">Costo de cada producto (lo que te sale a vos)</div>
   <div id="cProds"></div>
   <button class="btn" style="width:100%;margin-top:16px" data-close>Guardar</button>
+</div></div>
+<div class="sheet" id="prods" hidden><div class="pn" role="dialog" aria-modal="true" aria-label="Precios y stock">
+  <div class="ph"><h3>Precios, stock y avisos</h3><button class="x" id="prodX" aria-label="Cerrar">✕</button></div>
+  <p style="color:var(--muted);font-size:.88rem;margin:0">Cambiá lo que quieras y tocá <b style="color:var(--fg)">Publicar</b>. En 1 o 2 minutos se ve en la tienda.</p>
+  <div class="sec">La tienda</div>
+  <label class="fld">Aviso arriba de la tienda (dejalo vacío para no mostrar nada)<input id="pAviso" placeholder="Ej: Llegaron conjuntos nuevos 🔥"></label>
+  <div class="swrow"><span>⏸️ Pausar pedidos</span><button class="tgl bad" id="pPausa" aria-pressed="false" style="min-width:110px">No</button></div>
+  <div class="sec">Productos</div>
+  <div id="pList"><p class="empty">Cargando productos…</p></div>
+  <div class="pub">
+    <label class="fld" id="pClaveBox" hidden>Clave de cambios (te la pasa 4712 Web, se pide una sola vez)<input id="pClave" autocomplete="off" autocapitalize="characters" placeholder="XXXX-XXXX-XXXX-XXXX"></label>
+    <button class="btn" id="pPub" style="width:100%;margin-top:10px">Publicar cambios</button>
+    <div class="pst" id="pSt" role="status"></div>
+  </div>
 </div></div>
 <div class="toast" id="toast" hidden></div>
 
@@ -307,6 +339,7 @@ function toOrders(table){
     c.forEach((cell, i) => {
       if (i === 0 || !cell || cell.v == null) return;
       const v = String(cell.v);
+      if (v.startsWith("CAMBIO ")) return;
       if (/Pedido\s*#/.test(v) || /Total:/.test(v)) msg = v;
       else if (cols[i].includes("cliente")) cliente = v;
       else if (/^\d+(\.\d+)?$/.test(v.trim())) total = +v;
@@ -337,7 +370,7 @@ function demo(){
 async function load(){
   const b = $("#refresh"); b.classList.add("spin"); $("#errBox").innerHTML = "";
   try {
-    orders = new URLSearchParams(location.search).has("demo") ? demo() : toOrders(await fetchSheet());
+    if (new URLSearchParams(location.search).has("demo")) orders = demo(); else { lastTable = await fetchSheet(); orders = toOrders(lastTable); checkPub(); }
     $("#upd").textContent = "Actualizado " + new Date().toLocaleTimeString("es-AR",{timeZone:TZ,hour:"2-digit",minute:"2-digit"});
   } catch (e) {
     $("#errBox").innerHTML = `<div class="err"><b>No pude leer la planilla.</b><br>Revisá que esté compartida como "Cualquier persona con el enlace: Lector". (${esc(e.message)})</div>`;
@@ -499,6 +532,109 @@ function saveCfg(){
 $("#cfgBtn").onclick = openCfg;
 document.addEventListener("click", e => { if (e.target.closest("[data-cfg]")) openCfg(); if (e.target.closest("#cfg [data-close]")) saveCfg(); if (e.target.id === "cfg") saveCfg(); });
 function toast(t){ const el = $("#toast"); el.textContent = t; el.hidden = false; clearTimeout(toast.t); toast.t = setTimeout(()=>el.hidden=true, 1800); }
+/* ---------- precios, stock y avisos (cambios firmados → formulario → tienda) ---------- */
+const PUB_KEY = "v97qzcWqwlEBq5o7HQVF8Lb1H5RjA2WHpML5yJci-4w";
+const FORM_URL = "https://docs.google.com/forms/d/e/1FAIpQLSeC_Gk4aiUURCfHLs-Fbfj10Dub1nIS2Ii70OcaRJrnlfIwFw/formResponse";
+const K_CL = "panel_clave_" + CFG.key, K_SNAP = "panel_snap_" + CFG.key;
+let lastTable = null, CAT = null, ED = null, pending = ls.get(K_SNAP);
+const b64u = s => Uint8Array.from(atob(s.replace(/-/g,"+").replace(/_/g,"/").padEnd(Math.ceil(s.length/4)*4,"=")), c => c.charCodeAt(0));
+const u64 = b => btoa(String.fromCharCode(...new Uint8Array(b))).replace(/\+/g,"-").replace(/\//g,"_").replace(/=+$/,"");
+async function verifyCambio(txt){
+  const m = String(txt).match(/^CAMBIO (\{[\s\S]*\}) FIRMA ([A-Za-z0-9_-]+)\s*$/); if (!m) return null;
+  try {
+    const k = await crypto.subtle.importKey("raw", b64u(PUB_KEY), {name:"Ed25519"}, false, ["verify"]);
+    return (await crypto.subtle.verify({name:"Ed25519"}, k, b64u(m[2]), new TextEncoder().encode(m[1]))) ? JSON.parse(m[1]) : null;
+  } catch { return null; }
+}
+async function sheetSnap(){
+  let best = null;
+  for (const r of lastTable?.rows || []) for (const c of r.c || []){
+    if (!c || typeof c.v !== "string" || !c.v.startsWith("CAMBIO ")) continue;
+    const v = await verifyCambio(c.v); if (v && (!best || v.t > best.t)) best = v;
+  }
+  return best;
+}
+async function deriveKey(clave){
+  const norm = String(clave).toUpperCase().replace(/[^A-Z0-9]/g,"");
+  if (norm.length < 12) return null;
+  const h = new Uint8Array(await crypto.subtle.digest("SHA-512", new TextEncoder().encode("4712web|" + CFG.key + "|" + norm))).slice(0,32);
+  const der = new Uint8Array([0x30,0x2e,0x02,0x01,0x00,0x30,0x05,0x06,0x03,0x2b,0x65,0x70,0x04,0x22,0x04,0x20, ...h]);
+  const k = await crypto.subtle.importKey("pkcs8", der, {name:"Ed25519"}, true, ["sign"]);
+  const jwk = await crypto.subtle.exportKey("jwk", k);
+  return jwk.x === PUB_KEY ? { k, norm } : null;
+}
+async function loadCat(){
+  if (CAT) return CAT;
+  const html = await (await fetch("../?_=" + Date.now(), {cache:"no-store"})).text();
+  const m = html.match(/<script type="application\/json" id="menu-data">([\s\S]*?)<\/script>/);
+  CAT = JSON.parse(m[1]); return CAT;
+}
+const thumb = p => p.foto || p.colores?.[0]?.foto || p.fotos?.[0] || "";
+function pSt(t, cls=""){ const el = $("#pSt"); el.textContent = t; el.className = "pst " + cls; }
+async function openProds(){
+  $("#prods").hidden = false; $("#pClaveBox").hidden = !!ls.get(K_CL); pSt("");
+  if (!("subtle" in (window.crypto||{}))){ pSt("Tu navegador no permite publicar cambios. Actualizá Chrome.", "bad"); }
+  try {
+    const cat = await loadCat(), fromSheet = await sheetSnap();
+    const s = [fromSheet, pending].filter(Boolean).sort((a,b)=>b.t-a.t)[0] || null;
+    const by = Object.fromEntries((s?.p||[]).map(x=>[x.id,x]));
+    ED = {
+      aviso: s?.c && typeof s.c.aviso === "string" ? s.c.aviso : (cat.config.aviso || ""),
+      pausado: s?.c && "pausado" in s.c ? !!s.c.pausado : !!cat.config.pausado,
+      p: cat.productos.map(b => { const x = by[b.id];
+        return { id:b.id, nombre:b.nombre, cat:b.cat, foto:thumb(b), bp:b.precio, ba:b.antes||0, bs:!!b.sinStock,
+          precio: x && x.bp === b.precio && x.precio > 0 ? x.precio : b.precio,
+          antes: x && x.ba === (b.antes||0) ? (x.antes||0) : (b.antes||0),
+          sin: x && x.bs === !!b.sinStock ? !!x.sin : !!b.sinStock,
+          oc: !!x?.oc }; })
+    };
+    drawProds();
+  } catch (e) { $("#pList").innerHTML = `<div class="err">No pude cargar los productos. Revisá la conexión y probá de nuevo.</div>`; }
+}
+function drawProds(){
+  $("#pAviso").value = ED.aviso; $("#pPausa").setAttribute("aria-pressed", ED.pausado); $("#pPausa").textContent = ED.pausado ? "Sí, pausados" : "No";
+  let cat = "", h = "";
+  ED.p.forEach((p,i) => {
+    if (p.cat !== cat){ cat = p.cat; h += `<div class="sec" style="margin-top:14px;color:var(--muted)">${esc(cat)}</div>`; }
+    h += `<div class="prow${p.oc||p.sin?" off":""}" data-i="${i}">${p.foto?`<img src="${p.foto}" alt="" loading="lazy">`:`<div class="noimg"></div>`}<div class="nm"><b>${esc(p.nombre)}</b><small>${p.sin?"Sin stock":p.oc?"Oculto":"A la venta"}</small></div>
+      <div class="flds"><label>Precio<input inputmode="numeric" data-f="precio" value="${p.precio}"></label><label>Precio tachado (opcional)<input inputmode="numeric" data-f="antes" value="${p.antes||""}" placeholder="—"></label></div>
+      <div class="tg2"><button class="tgl" data-t="stock" aria-pressed="${!p.sin}">${p.sin?"✖️ Sin stock":"✅ Hay stock"}</button><button class="tgl" data-t="ver" aria-pressed="${!p.oc}">${p.oc?"🙈 Oculto":"👁️ Se muestra"}</button></div></div>`;
+  });
+  $("#pList").innerHTML = h;
+}
+const dirty = () => pSt("Tenés cambios sin publicar");
+$("#pList").addEventListener("input", e => { const r = e.target.closest(".prow"), f = e.target.dataset.f; if (!r || !f) return; ED.p[+r.dataset.i][f] = +String(e.target.value).replace(/\D/g,"") || 0; dirty(); });
+$("#pList").addEventListener("click", e => { const b = e.target.closest("[data-t]"); if (!b) return; const p = ED.p[+b.closest(".prow").dataset.i];
+  if (b.dataset.t === "stock") p.sin = !p.sin; else p.oc = !p.oc; drawProds(); dirty(); });
+$("#pAviso").addEventListener("input", e => { ED.aviso = e.target.value; dirty(); });
+$("#pPausa").onclick = () => { ED.pausado = !ED.pausado; drawProds(); dirty(); };
+$("#prodBtn").onclick = openProds;
+$("#prodX").onclick = () => { $("#prods").hidden = true; };
+$("#prods").addEventListener("click", e => { if (e.target.id === "prods") $("#prods").hidden = true; });
+$("#pPub").onclick = async () => {
+  if (!ED) return;
+  const bad = ED.p.find(p => !p.precio); if (bad){ pSt(`Falta el precio de ${bad.nombre}`, "bad"); return; }
+  const b = $("#pPub"); b.disabled = true; pSt("Publicando…");
+  try {
+    const key = await deriveKey(ls.get(K_CL) || $("#pClave").value);
+    if (!key){ $("#pClaveBox").hidden = false; ls.set(K_CL, null); pSt("La clave de cambios no es correcta", "bad"); b.disabled = false; return; }
+    ls.set(K_CL, key.norm); $("#pClaveBox").hidden = true;
+    const snap = { t: Date.now(), c: { aviso: ED.aviso.trim(), pausado: ED.pausado },
+      p: ED.p.map(p => ({ id:p.id, precio:p.precio, bp:p.bp, antes:p.antes||0, ba:p.ba, sin:p.sin, bs:p.bs, oc:p.oc })) };
+    const json = JSON.stringify(snap);
+    const sig = await crypto.subtle.sign({name:"Ed25519"}, key.k, new TextEncoder().encode(json));
+    const d = new URLSearchParams();
+    d.append("entry.2021034120", "CAMBIO " + json + " FIRMA " + u64(sig));
+    d.append("entry.1737521343", "CAMBIO DE PRECIOS (panel)");
+    await fetch(FORM_URL, { method:"POST", mode:"no-cors", body:d });
+    pending = snap; ls.set(K_SNAP, snap);
+    pSt("✅ Publicado. En 1 o 2 minutos se ve en la tienda.", "ok"); toast("Cambios publicados");
+    setTimeout(load, 20000);
+  } catch (e) { pSt("No se pudo publicar. Revisá la conexión y probá de nuevo.", "bad"); }
+  b.disabled = false;
+};
+async function checkPub(){ if (!pending) return; const s = await sheetSnap(); if (s && s.t >= pending.t){ pending = null; ls.set(K_SNAP, null); } }
+
 /* ---------- compartir resumen ---------- */
 $("#share").onclick = async () => {
   const R = orders.filter(inRange).filter(live), N = calcNeto(R), T = topProducts(R);
