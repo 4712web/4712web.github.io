@@ -121,6 +121,7 @@ header small{color:var(--muted);font-size:.78rem}
     <button class="ref" id="refresh" aria-label="Actualizar"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-2.6-6.4"/><path d="M21 3v6h-6"/></svg></button></header>
   <div class="tabs" role="tablist"><button role="tab" data-tab="agenda" aria-selected="true">📅 Agenda</button><button role="tab" data-tab="nums" aria-selected="false">📊 Números</button><button role="tab" data-tab="blq" aria-selected="false">⛔ Bloquear</button></div>
 
+  <div id="lockBox"></div>
   <section id="agenda">
     <div class="days" id="days"></div>
     <div class="dtitle"><h2 id="dT"></h2><span id="dS"></span></div>
@@ -185,7 +186,7 @@ const live = t => !isCanc(t);
 async function load(){
   const b = $("#refresh"); b.classList.add("spin");
   try {
-    const r = await cargarDatos(); DATA = { turnos: turnosDemo().concat(r.turnos), snap: r.snap };
+    const r = await cargarDatos(); const lk = await abrirTurnos(r.turnos); DATA = { turnos: turnosDemo().concat(r.turnos), snap: r.snap }; avisoClave(lk);
     if (pend && DATA.snap.t >= pend.t){ pend = null; ls.set(K_PEND, null); }
     $("#upd").textContent = "Actualizado " + new Date().toLocaleTimeString("es-AR", {hour:"2-digit", minute:"2-digit"});
   } catch { $("#upd").textContent = "Sin conexión con la planilla"; }
@@ -193,6 +194,35 @@ async function load(){
 }
 $("#refresh").onclick = load;
 setInterval(() => { if (!document.hidden && !$("#app").hidden) load(); }, 60000);
+
+/* ---------- datos protegidos de los clientes ---------- */
+const SEAL = {"s": "zNWZiDMRCzxd-nXpsrQu9w", "i": "f6mBpyTAVJMCpR5M", "c": "LnUPJPN4b-jZ4P-tOjLQ9brKZvw0u1k7CccPdMtBNW61M7FHdiPRrvJuzB9y8JsU0DEHo0swt5M6BDKnfGSVH47ScBvv2F-qupe1mlDpaC_L_CmReEf_3HDjHVpagrKC4QZs5R77StAw0UwPT-SL9u2Ya5dcdpdD7jDkoMyHaa7lyB-gAuXPiuhpIVpDrgysqtkY0YFFQxO2uZZvhabaDTUhWnqjGMWV1fY8Pitnn-UCRztnnlFto8PrgtT5lvivW0MKCw6j8CJ6LNxQK-In51vXcJ552blI_VVlFXdRonl-btzzSuQtZkwsD81uIJGC3vNdt5LKiQwtnQCH03-1cntpKlqoWgjoxQUV9aqsOCV-YpEny90UBJcbW6S7Gtiw2MEPoktEfR_EmUea0vyyNY0Mz9yczBEy4AjsDKkL3wcnmyQqFaoA4tvQHL6DHwl6B3IYQC1t94hKAWevB07_KcUO-LTAPH5FVIprpsu_RSsxO1FBsPTzZrEkSzbmbxBivuaqP5_gcBKzwedqCpl80ruyYcsO34xpq9WJMQ96BXsg3V2RwJX5wvqtm3kjBw2H0J6o13WFixDKKLZ5jPbY2hXDTKsiZhiKZfjHz59fCOY1QCtVf34uXozkSxBBLkH5vyX9CWKGVlqu-iAHrulN5X8ACbJH6bdCZoinJ1EWB5FAkIl3HTwDfkdx6kZCPoVuOSQmkdImUOGE2yOYyY-GcxA8Rypih3qAx2-JzEsRCFS6JCTWdD9H4zhkZaR5Vlt5FZ_5aJ5RV61UNtYmXRu6Y1KWg_M0awi8gtEgA-0V4JsGUF34kk9kRwQDzt5ntPYr5viphPp5wYXdid1LPWlNeCs6sGtQWDVWZVFmQEPV8a_OjX4PqQAuqbK9vitHjYIKdNjD_Op8kMM9Il_JMbJw1vgJ_FmYKURLzp-rEUdf2vZzGLPRPZdOVBsk2Lllgrk-i2sfejUo3mjDyluG07Nl-hwy7KdZtR3e70g7rhzoOb8uj6KhaxRuORWm61rLUWKQxmVD77qsMkJe7Zo70J1TWrAb9-7a2tH-4stpCIfjVqXyCdFE3u3objGHW35800yJeBLwjZLnW_jSYi66-lJYJEVHzF__4ioXtpxUPBxYtWriiG4uweEzZYPlaABQaQhmcer3cQqo_lrOa9uxmH0PpaMWhSfVSGlbM37pSjPhFT4JGDWIogwtzHvH--ZKST0t7K1u1DsJMDSIaFiF2TqO06yWIN0_itg0QzLPJ6vcm-JaU9T1rujh-IT360e6I6Y6DASjzLGbruzJApepmPi9npscfnnXLPEVrRhg1LbkoZPCfqnQ0KWkzphpzjgDqKJEqnpT0j0cbq-tZNa-nqc4pV5T94kFQM_5rMUDofIN7uGYfZ7ViFTsGz-oDogAAXzZWW-z7pMZbVuggq0pFnVMvYHwe2rnQ__41chONXR5676sqe2G6GNXG6i8sMMy6VoTJ97dnGAs_A1VH7V0xtEvPnEpNsQIPZIx85oEQ02p3Hmozvfb2dtuOmJMw-_Gm3iPk7N6whwdLn0pVPuH_XuEh-poH3rZQABHJfKazcpe9_PFep8GbHH-NSq2xlIWIGXcvnKj17t9eOjTft2dUQ6ZR_u9CSgYWcvFzXyYw5ib-y2B5Q"};
+let PKEY = null;
+async function clavePrivada(norm){
+  if (PKEY) return PKEY; if (!norm) return null;
+  try {
+    const base = await crypto.subtle.importKey("raw", new TextEncoder().encode(norm), "PBKDF2", false, ["deriveKey"]);
+    const k = await crypto.subtle.deriveKey({name:"PBKDF2", salt: b64u(SEAL.s), iterations: 150000, hash: "SHA-256"}, base, {name:"AES-GCM", length: 256}, false, ["decrypt"]);
+    const pk8 = await crypto.subtle.decrypt({name:"AES-GCM", iv: b64u(SEAL.i)}, k, b64u(SEAL.c));
+    return PKEY = await crypto.subtle.importKey("pkcs8", pk8, {name:"RSA-OAEP", hash:"SHA-256"}, false, ["decrypt"]);
+  } catch { return null; }
+}
+async function abrirTurnos(L){
+  const key = await clavePrivada(ls.get(K_CL)); let locked = 0;
+  for (const t of L){ if (!t.x || t.n) continue;
+    if (!key){ locked++; t.n = "🔒 Cliente"; continue; }
+    try { const [ek, iv, ct] = t.x.split(".").map(b64u); const raw = await crypto.subtle.decrypt({name:"RSA-OAEP"}, key, ek);
+      const k = await crypto.subtle.importKey("raw", raw, "AES-GCM", false, ["decrypt"]); Object.assign(t, JSON.parse(new TextDecoder().decode(await crypto.subtle.decrypt({name:"AES-GCM", iv}, k, ct)))); } catch { t.n = "🔒 Cliente"; }
+  }
+  return locked;
+}
+function avisoClave(n){
+  const el = document.getElementById("lockBox"); if (!n){ el.innerHTML = ""; return; }
+  el.innerHTML = `<div class="card" style="margin:0 0 12px"><b>🔒 ${n} turno${n>1?"s":""} con datos protegidos</b><p style="color:var(--muted);font-size:.86rem;margin:4px 0 0">Los nombres y teléfonos viajan cifrados. Poné tu clave de cambios una sola vez para verlos.</p>
+    <label class="fld"><input id="ckIn" autocomplete="off" autocapitalize="characters" placeholder="XXXX-XXXX-XXXX-XXXX"></label><button class="btn" id="ckGo" style="width:100%;margin-top:10px">Ver datos</button><div class="st bad" id="ckSt"></div></div>`;
+  document.getElementById("ckGo").onclick = async () => { const norm = document.getElementById("ckIn").value.toUpperCase().replace(/[^A-Z0-9]/g,"");
+    if (!(await clavePrivada(norm))){ document.getElementById("ckSt").textContent = "La clave no es correcta"; return; } ls.set(K_CL, norm); load(); };
+}
 
 /* ---------- pestañas ---------- */
 $$(".tabs button").forEach(b => b.onclick = () => { tab = b.dataset.tab; $$(".tabs button").forEach(x => x.setAttribute("aria-selected", x === b)); ["agenda","nums","blq"].forEach(id => $("#"+id).hidden = id !== tab); render(); });

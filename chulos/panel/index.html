@@ -295,7 +295,7 @@ function fetchSheet(){
     function cleanup(){ clearTimeout(t); delete window[cb]; s.remove(); }
     window[cb] = res => { cleanup(); if (res.status === "error") fail(new Error((res.errors||[]).map(e=>e.detailed_message||e.message).join(" ") || "error")); else ok(res.table); };
     s.onerror = () => { cleanup(); fail(new Error("no se pudo conectar")); };
-    s.src = `https://docs.google.com/spreadsheets/d/${CFG.sheet}/gviz/tq?gid=${CFG.gid}&headers=1&tq=${encodeURIComponent(`select * where B contains '${CFG.match}' or B starts with 'CAMBIO[${CFG.key}]'`)}&tqx=out:json;responseHandler:${cb}&_=${Date.now()}`;
+    s.src = `https://docs.google.com/spreadsheets/d/${CFG.sheet}/gviz/tq?gid=${CFG.gid}&headers=1&tq=${encodeURIComponent(`select * where B contains '${CFG.match}' or B starts with 'CAMBIO[${CFG.key}]' or B starts with 'PEDIDO[${CFG.key}]'`)}&tqx=out:json;responseHandler:${cb}&_=${Date.now()}`;
     document.head.appendChild(s);
   });
 }
@@ -361,10 +361,50 @@ function demo(){
 }
 
 /* ---------- carga ---------- */
+/* ---------- pedidos cifrados: se abren con la clave de cambios ---------- */
+const SEAL = {"s": "TovVsmTFLar3hOhpeExFBw", "i": "sgmjmcMKONYgJd8U", "c": "djB_EQXYGentqF9ykpc3wdpnCAHyMDhjoUEqGArIqHl0zSAXW-VJXmY-LacYDwkoYNKthXjy5b0Kk3F7CSrTma_mhK-nFuKEYsmiygMd7B-_fxu-3KqRKf0P5QhiQoT5qhHzBpbmlJ9vjbYKlULmozv13VdYcln8bv6-PZD8lippPYC5zEE8Bjtzp9ERsXQOKVSHRrdfT4-YfvGxtFtfnvqZExdevvoBlLUr25Eb9Q_fAwz7-wCoGyTaNFaZSVJAn_b333EVQXLCedLVOkWm9hPJ93Gawu8kXAe3U66Fu9aZ1bxEwQ7ouud36XjmpaQabfa3v-IzBBcOp907NQnrkdJqP9kK2dgSOBN1GMGB7DCcPJ_NBy5lKVmaUP0mZhW5N5TgoeSHYGg_zmEacVu7sWmpFyavx4q1keut_YmrYJhNIMz8TzG6fE0ootf8OGghu10bRoYJ4tjHnARRcCdO-_ioWV7jdUaXdT0jIbtDBmTapt6uwMVpVfS8DrA0UCxeBTZconfwXw2nc4sncgHwcrjSOcc7PAS49dOMJYTIm7cpjo75fQDSXnMcIJkiKM56qtjS21ruzIhwGkW2OTmBH0ZRxgycMDBMAa4OjtEEsqZQ8w4KI-CHpN-G2THdVVm7v8wQkRsyULx-JzbWb_6pCMWL4mTbb-SB3OC1b8vMhE8oZVmzY8k4wXbRRtQ-8urACMC5dUXZCLDKSxTJdi72uWJ-cPaIRfbXczJGH25dnmXNkuNacN3fham-S9pWbAqd3jGYLc6Quxp4OScf8VDRJOlmWSaLtSTE3cl3F3eMRbmcJ0aUfiCsFNB4zPfpcf4tajlX8xXgrEfCGhN_ZDX_yxTK_H1Ow9a_gyF9JpqZ6zWtcL6obJefMA6YJJ_rK3U_bTGZTL_mPVSJFb4I9mkNnDIiK51hGrI7PkFzTZThrEuS04VQNkrLs24oRgHGGwqd7J2yCX9bCvR4V4m76ciuUT4KRXgPGbqSds3PqtRJzDEvs84mMLCYD61PDXx8sJqgavklGx0eKAYDPggE_bZdNiRjJBZOfizP7shKZz5ah51sGyBNuG8GwP6R7Byc1KBsDcWUvPzQjOa08IG9f2vLjgvx4-3BWmOahc02uLi7y8sTf3tqTJdLeTh3bvwtQgvuYiA_lo6i7PTLvs16noLdtQz-Kt4jB14sDWFXtGfPZf8lJBvW5CWgQ6aayGZPynBBncke6V6az2x00l1DwplGapPUFBG2gQGWFCmOdxXkZQFTeoxE4_bJ31KXN1G2bHQ6nLut9S7sk2lgD5gbEqNM6sG3_ahboUJ5Z72c5gA9TxNkzX-xxYsiq2BGtx5W2R8sZMwCQFKaVBPs_QNsLC3f_1n9gtko7BbnDUErjvifE25av7xZBb8giQEOpdeMF9GjCiL0kItmubAVXeZmnxbr_qFLhMSKRFT8mAhfM8py685MAC-un5VeAXm4Ak6yDzOLkL3cglb-8-V9EOtCQNXSuQiJsjppFfLe1EprgToCqyQFC6gkaG_5CMXME0wm3CDFqcXvLZUM29wftJw0opzDs1LkdZO0bDX0v13i7t4kQWbm66rFa9kHeZsu39IKe2ow1dNp6Ac_I_96EuM-8kSuBsa1Ok6As0PQGx43-jHutPo"};
+let PKEY = null;
+const b64x = s => Uint8Array.from(atob(s.replace(/-/g,"+").replace(/_/g,"/").padEnd(Math.ceil(s.length/4)*4,"=")), c => c.charCodeAt(0));
+async function clavePrivada(norm){
+  if (PKEY) return PKEY; if (!norm) return null;
+  try {
+    const base = await crypto.subtle.importKey("raw", new TextEncoder().encode(norm), "PBKDF2", false, ["deriveKey"]);
+    const k = await crypto.subtle.deriveKey({name:"PBKDF2", salt: b64x(SEAL.s), iterations: 150000, hash: "SHA-256"}, base, {name:"AES-GCM", length: 256}, false, ["decrypt"]);
+    const pk8 = await crypto.subtle.decrypt({name:"AES-GCM", iv: b64x(SEAL.i)}, k, b64x(SEAL.c));
+    PKEY = await crypto.subtle.importKey("pkcs8", pk8, {name:"RSA-OAEP", hash:"SHA-256"}, false, ["decrypt"]);
+    return PKEY;
+  } catch { return null; }
+}
+async function abrir(s){
+  const [ek, iv, ct] = s.split(".").map(b64x);
+  const raw = await crypto.subtle.decrypt({name:"RSA-OAEP"}, PKEY, ek);
+  const k = await crypto.subtle.importKey("raw", raw, "AES-GCM", false, ["decrypt"]);
+  return new TextDecoder().decode(await crypto.subtle.decrypt({name:"AES-GCM", iv}, k, ct));
+}
+async function abrirTabla(table){
+  const pre = `PEDIDO[${CFG.key}] `; let locked = 0;
+  const key = await clavePrivada(ls.get("panel_clave_" + CFG.key));
+  for (const r of table.rows || []) for (const c of r.c || []){
+    if (!c || typeof c.v !== "string" || !c.v.startsWith(pre)) continue;
+    if (!key){ locked++; c.v = null; continue; }
+    try { c.v = await abrir(c.v.slice(pre.length)); } catch { c.v = null; }
+  }
+  return locked;
+}
+function avisoClave(n){
+  $("#errBox").innerHTML = `<div class="err" style="border-color:var(--line);background:var(--surface);color:var(--fg)"><b>🔒 Hay ${n} pedido${n>1?"s":""} protegido${n>1?"s":""}.</b><br><span style="color:var(--muted)">Los datos de tus compradores viajan cifrados. Poné tu clave de cambios una sola vez para verlos.</span>
+    <input id="ckIn" placeholder="XXXX-XXXX-XXXX-XXXX" autocapitalize="characters" style="width:100%;margin-top:10px;font-size:16px;padding:11px 12px;border-radius:11px;border:1.5px solid var(--line);background:var(--bg);color:var(--fg)">
+    <button class="btn" id="ckGo" style="width:100%;margin-top:8px">Ver pedidos</button><div id="ckSt" style="margin-top:6px;color:#ff9a9a;font-size:.85rem"></div></div>`;
+  $("#ckGo").onclick = async () => {
+    const norm = $("#ckIn").value.toUpperCase().replace(/[^A-Z0-9]/g,"");
+    if (!(await clavePrivada(norm))){ $("#ckSt").textContent = "La clave no es correcta"; return; }
+    ls.set("panel_clave_" + CFG.key, norm); load();
+  };
+}
 async function load(){
   const b = $("#refresh"); b.classList.add("spin"); $("#errBox").innerHTML = "";
   try {
-    if (new URLSearchParams(location.search).has("demo")) orders = demo(); else { lastTable = await fetchSheet(); orders = toOrders(lastTable); checkPub(); }
+    if (new URLSearchParams(location.search).has("demo")) orders = demo(); else { lastTable = await fetchSheet(); const lk = await abrirTabla(lastTable); orders = toOrders(lastTable); checkPub(); if (lk) avisoClave(lk); }
     $("#upd").textContent = "Actualizado " + new Date().toLocaleTimeString("es-AR",{timeZone:TZ,hour:"2-digit",minute:"2-digit"});
   } catch (e) {
     $("#errBox").innerHTML = `<div class="err"><b>No pude leer la planilla.</b><br>Revisá que esté compartida como "Cualquier persona con el enlace: Lector". (${esc(e.message)})</div>`;

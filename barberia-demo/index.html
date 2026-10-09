@@ -329,13 +329,11 @@ function confirmar(){
   const T = { id: "T" + Date.now().toString(36) + Math.random().toString(36).slice(2,5), b: bId, s: sv.id, d: S.d, h: S.h, dur: sv.dur, n, tel, p: sv.p,
     prods: L.map(({p,q})=>({id:p.id,q})), pt: prodTotal(), at: Date.now() };
   // registrar en la planilla
-  try {
-    const f = new URLSearchParams();
-    f.append("entry.2021034120", `TURNO[${CONF.key}] ` + JSON.stringify(T));
-    f.append("entry.1095410951", String(T.p + T.pt));
-    f.append("entry.1737521343", n);
-    if (!(navigator.sendBeacon && navigator.sendBeacon(CONF.form, f))) fetch(CONF.form, {method:"POST", mode:"no-cors", body:f, keepalive:true}).catch(()=>{});
-  } catch {}
+  // los datos del cliente viajan cifrados: en la planilla solo queda día, hora y barbero
+  const pub = { ...T }; delete pub.n; delete pub.tel;
+  const mandar = obj => { try { const f = new URLSearchParams(); f.append("entry.2021034120", `TURNO[${CONF.key}] ` + JSON.stringify(obj));
+    if (!(navigator.sendBeacon && navigator.sendBeacon(CONF.form, f))) fetch(CONF.form, {method:"POST", mode:"no-cors", body:f, keepalive:true}).catch(()=>{}); } catch {} };
+  sellar(JSON.stringify({ n, tel })).then(x => mandar({ ...pub, x })).catch(() => mandar({ ...pub, n: "Cliente web" }));
   DATA.turnos.push(T);
   const mine = (ls.get(LS_MINE) || []).filter(x => x.d >= ymd(new Date())); mine.push(T); ls.set(LS_MINE, mine); ls.set(LS_CLI, { n, tel: $("#cTel").value.trim() });
   const b = barbero(bId), total = T.p + T.pt;

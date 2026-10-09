@@ -1059,15 +1059,32 @@ $("#ownClose").onclick = () => { $("#own").hidden = true; };
 
 /* >>> 4712 BACKEND >>> */
 const FORM_URL = "https://docs.google.com/forms/d/e/1FAIpQLSeC_Gk4aiUURCfHLs-Fbfj10Dub1nIS2Ii70OcaRJrnlfIwFw/formResponse";
+/* Los pedidos viajan cifrados: solo el panel del dueño (con su clave) puede leer los datos del comprador. */
+const SEAL_PUB = "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAslrUtU9XmxDgAazF7NSBQat1zSgp8JRL-WHfPV6F96cuCjnxboHkITkTRB5__IUvbEjCPD1GKNiwgQ6nxeI7W1D6hv36Hp8aNRfhsmWtCYl-cmry9PtMmy5qc7MCgJi1U3kB_dZGWpeJhCixzlhrZJ1yOiMIV1p-7CFXxWfRFSsaqfhmta6jNp0eIX__feyjydWjkTH162M_pjO937eReXLMyJg01A4wKzTgAotvJ6lkNMLBCdeyJLS0iNGPgKbiMeXG-NEv7ZXLA4PJJq2OOonqseSOHQS_s27ZlPj2UzzzgyIwwBQy_k-BUvalYut2bwZSe8BCW1peIbCuDMDwtQIDAQAB";
+const u64s = b => btoa(String.fromCharCode(...new Uint8Array(b))).replace(/\+/g,"-").replace(/\//g,"_").replace(/=+$/,"");
+const b64s = s => Uint8Array.from(atob(s.replace(/-/g,"+").replace(/_/g,"/").padEnd(Math.ceil(s.length/4)*4,"=")), c => c.charCodeAt(0));
+let sealKey = null;
+try { if (!window.claude?.use) sealKey = crypto.subtle.importKey("spki", b64s(SEAL_PUB), {name:"RSA-OAEP", hash:"SHA-256"}, false, ["encrypt"]); } catch {}
+async function sellar(txt){
+  const pub = await sealKey, k = await crypto.subtle.generateKey({name:"AES-GCM", length:256}, true, ["encrypt"]);
+  const iv = crypto.getRandomValues(new Uint8Array(12));
+  const ct = await crypto.subtle.encrypt({name:"AES-GCM", iv}, k, new TextEncoder().encode(txt));
+  const ek = await crypto.subtle.encrypt({name:"RSA-OAEP"}, pub, await crypto.subtle.exportKey("raw", k));
+  return u64s(ek) + "." + u64s(iv) + "." + u64s(ct);
+}
+function enviarForm(texto){
+  const d = new URLSearchParams(); d.append("entry.2021034120", texto);
+  const ok = navigator.sendBeacon && navigator.sendBeacon(FORM_URL, d);
+  if (!ok) fetch(FORM_URL, {method:"POST", mode:"no-cors", body:d, keepalive:true}).catch(()=>{});
+}
 function registrarPedido(){
-  try {
-    const d = new URLSearchParams();
-    d.append("entry.2021034120", buildMsg().replace(/\*/g,""));
-    d.append("entry.1095410951", String(total()));
-    d.append("entry.1737521343", ($("#cName").value||"").trim());
-    const ok = navigator.sendBeacon && navigator.sendBeacon(FORM_URL, d);
-    if (!ok) fetch(FORM_URL, {method:"POST", mode:"no-cors", body:d, keepalive:true}).catch(()=>{});
-  } catch {}
+  if (window.claude?.use) return;
+  let msg = ""; try { msg = buildMsg().replace(/\*/g,""); } catch { return; }
+  sellar(msg).then(s => enviarForm(`PEDIDO[chulos] ${s}`)).catch(() => {
+    // navegador viejo: se anota el pedido sin datos personales
+    const limpio = msg.split("\n").filter(l => !/^(Nombre|Dirección|Direccion|DNI|Gmail|Mail|Email|Número|Numero|Tel|Teléfono|Celular|Provincia|Localidad|Sucursal|Referencia|Entre calles|Piso)/i.test(l.trim())).join("\n");
+    enviarForm(limpio);
+  });
 }
 
 /* ================= CAMBIOS DEL DUEÑO (desde el panel, con firma) ================= */

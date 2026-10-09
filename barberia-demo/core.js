@@ -10,6 +10,7 @@ const CONF = {
   gid: "245098590",
   form: "https://docs.google.com/forms/d/e/1FAIpQLSeC_Gk4aiUURCfHLs-Fbfj10Dub1nIS2Ii70OcaRJrnlfIwFw/formResponse",
   pub: "EXAPwyNEm02MlXqgOhjQDcBDggf5bs3diFU68Ui3juM",
+  sello: "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAtd2G4fNdEqKBAnw4evJtxc1cuWttM7n3hRvl2332sBC39M1Mz8SGdzhdQUy_KoKLoej0A30oyjkF9WrqkBh5psEXpNi588_HgkL8952aYFBQ1Ou8EqsWPPcOUB5xMVWzwMDVMmAHAOMwXtTRo4oC2mHFCPiz1epknJ51oOTJS1igbRIbMgSrznIFawihUxHZ77iNqEtLPyHDrUMFIGiDTsgGLwhnvdPCoTR5c2jw-aNVa4YeyncmSvlx5nN4Mv5WWhwvC4fRGcuo2iS6ZcElgq_kQHyS0oPDkDNXrZHlqB60wJ7TMW2cMsAZJFJalhpRo13REJlRwLEdzaN-7E4IZQIDAQAB", // clave pública para cifrar los datos de los clientes
   pin: "1234",
   // 0 = domingo … 6 = sábado. null = cerrado
   horarios: { 0: null, 1: null, 2: ["10:00","20:00"], 3: ["10:00","20:00"], 4: ["10:00","20:00"], 5: ["10:00","21:00"], 6: ["09:00","18:00"] },
@@ -178,4 +179,15 @@ function visitasPrevias(DATA, tel, antesDe, noVino = () => false){
   const k = telKey(tel), cancel = new Set(DATA.snap.cancel || []);
   if (!k) return 0;
   return DATA.turnos.filter(t => telKey(t.tel) === k && !cancel.has(t.id) && !noVino(t) && (t.d + t.h) < antesDe).length;
+}
+
+/* ---------- cifrado de datos del cliente (solo el panel con la clave puede leerlos) ---------- */
+let _sk = null;
+async function sellar(txt){
+  _sk = _sk || crypto.subtle.importKey("spki", b64u(CONF.sello), {name:"RSA-OAEP", hash:"SHA-256"}, false, ["encrypt"]);
+  const pub = await _sk, k = await crypto.subtle.generateKey({name:"AES-GCM", length:256}, true, ["encrypt"]);
+  const iv = crypto.getRandomValues(new Uint8Array(12));
+  const ct = await crypto.subtle.encrypt({name:"AES-GCM", iv}, k, new TextEncoder().encode(txt));
+  const ek = await crypto.subtle.encrypt({name:"RSA-OAEP"}, pub, await crypto.subtle.exportKey("raw", k));
+  return u64(ek) + "." + u64(iv) + "." + u64(ct);
 }
