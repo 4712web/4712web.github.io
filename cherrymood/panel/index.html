@@ -162,6 +162,22 @@ details pre{white-space:pre-wrap;font-family:ui-monospace,Menlo,monospace;font-s
 .tgl{padding:9px 6px;border-radius:10px;background:var(--sunk);font-weight:700;font-size:.8rem;color:var(--muted);border:1.5px solid transparent}
 .tgl[aria-pressed="true"]{border-color:var(--acc);color:var(--acc);background:rgba(57,210,106,.1)}
 .tgl.bad[aria-pressed="true"]{border-color:#ff7a7a;color:#ff9a9a;background:rgba(255,122,122,.1)}
+.prow .nm em{font-style:normal;font-size:.68rem;font-weight:800;color:var(--bg);background:var(--acc);border-radius:6px;padding:1px 6px;margin-left:6px;vertical-align:2px}
+.fstrip{grid-column:1/-1;display:flex;gap:8px;overflow-x:auto;padding:2px 0 4px}
+.fstrip .ft{position:relative;flex:0 0 64px;height:64px;border-radius:12px;overflow:hidden;background:var(--sunk);border:2px solid transparent}
+.fstrip .ft.main{border-color:var(--acc)}
+.fstrip .ft img{width:100%;height:100%;object-fit:cover;display:block}
+.fstrip .ft .rm{position:absolute;top:2px;right:2px;width:22px;height:22px;border-radius:999px;background:rgba(0,0,0,.7);color:#fff;font-size:.72rem;line-height:22px;text-align:center}
+.fstrip .ft .ld{display:grid;place-items:center;height:100%;font-size:.65rem;color:var(--faint)}
+.fstrip .add{flex:0 0 64px;height:64px;border-radius:12px;border:1.5px dashed var(--line);display:grid;place-items:center;text-align:center;font-size:.7rem;font-weight:700;color:var(--muted);cursor:pointer;line-height:1.15}
+.fstrip .add input{display:none}
+.fhint{grid-column:1/-1;font-size:.7rem;color:var(--faint);margin-top:-4px}
+.ed{grid-column:1/-1}
+.ed summary{font-size:.8rem;font-weight:700;color:var(--muted);cursor:pointer;padding:4px 0}
+.ed .eg{display:grid;gap:8px;margin-top:8px}
+.ed textarea{font:inherit;font-size:16px;padding:9px 10px;border-radius:10px;border:1.5px solid var(--line);background:var(--surface);width:100%;resize:vertical}
+.newp{width:100%;margin:10px 0 2px;padding:14px;border-radius:12px;border:1.5px dashed var(--acc);color:var(--acc);font-weight:800;background:transparent}
+.delp{grid-column:1/-1;justify-self:start;color:#ff9a9a;font-size:.8rem;font-weight:700;padding:4px 0}
 .pub{position:sticky;bottom:0;background:var(--bg);padding:12px 0 4px;border-top:1px solid var(--line);margin-top:8px}
 .pst{font-size:.84rem;color:var(--muted);text-align:center;margin-top:8px;min-height:1.2em}
 .pst.ok{color:var(--acc)} .pst.bad{color:#ff9a9a}
@@ -226,7 +242,7 @@ details pre{white-space:pre-wrap;font-family:ui-monospace,Menlo,monospace;font-s
     <div class="card"><h2>Horario de los pedidos</h2><div class="brk" id="bHora"></div></div>
   </div>
 
-  <button class="btn pbtn" id="prodBtn">🛍️ Precios, stock y avisos de la tienda</button>
+  <button class="btn pbtn" id="prodBtn">🛍️ Mis productos: fotos, precios y stock</button>
   <div class="tools">
     <button class="btn ghost" id="share">📤 Compartir resumen</button>
     <button class="btn ghost" id="cfgBtn">⚙️ Costos y comisiones</button>
@@ -250,13 +266,15 @@ details pre{white-space:pre-wrap;font-family:ui-monospace,Menlo,monospace;font-s
   <div id="cProds"></div>
   <button class="btn" style="width:100%;margin-top:16px" data-close>Guardar</button>
 </div></div>
-<div class="sheet" id="prods" hidden><div class="pn" role="dialog" aria-modal="true" aria-label="Precios y stock">
-  <div class="ph"><h3>Precios, stock y avisos</h3><button class="x" id="prodX" aria-label="Cerrar">✕</button></div>
+<div class="sheet" id="prods" hidden><div class="pn" role="dialog" aria-modal="true" aria-label="Mis productos">
+  <div class="ph"><h3>Mis productos</h3><button class="x" id="prodX" aria-label="Cerrar">✕</button></div>
   <p style="color:var(--muted);font-size:.88rem;margin:0">Cambiá lo que quieras y tocá <b style="color:var(--fg)">Publicar</b>. En 1 o 2 minutos se ve en la tienda.</p>
   <div class="sec">La tienda</div>
   <label class="fld">Aviso arriba de la tienda (dejalo vacío para no mostrar nada)<input id="pAviso" placeholder="Ej: Llegaron productos nuevos 🔥"></label>
   <div class="swrow"><span>⏸️ Pausar pedidos</span><button class="tgl bad" id="pPausa" aria-pressed="false" style="min-width:110px">No</button></div>
   <div class="sec">Productos</div>
+  <button class="newp" id="pNew">＋ Agregar producto nuevo</button>
+  <datalist id="pCats"></datalist>
   <div id="pList"><p class="empty">Cargando productos…</p></div>
   <div class="pub">
     <label class="fld" id="pClaveBox" hidden>Clave de cambios (te la pasa 4712 Web, se pide una sola vez)<input id="pClave" autocomplete="off" autocapitalize="characters" placeholder="XXXX-XXXX-XXXX-XXXX"></label>
@@ -604,7 +622,55 @@ async function loadCat(){
   CAT = JSON.parse(m[1]); return CAT;
 }
 const thumb = p => p.foto || p.colores?.[0]?.foto || p.fotos?.[0] || "";
+const baseFotos = b => b ? [b.foto, ...(b.fotos || [])].filter(Boolean) : [];
+const K_FC = "panel_fotos_" + CFG.key, K_UP = "panel_subidas_" + CFG.key;
+const FC = ls.get(K_FC) || {};            // huella -> foto (las que subiste desde este celu)
+const SUB = new Set(ls.get(K_UP) || []);  // huellas ya subidas a la planilla
+const FOTO_PRE = "FOTO[cherrymood] ";
+async function fotoHash(d){ return u64(await crypto.subtle.digest("SHA-256", new TextEncoder().encode(d))).slice(0,16); }
+function guardarFC(){ try { localStorage.setItem(K_FC, JSON.stringify(FC)); } catch { /* sin lugar: quedan solo en memoria */ } }
+function gvizRows(tq){
+  return new Promise(res => {
+    const cb = "__gf" + Math.random().toString(36).slice(2), sc = document.createElement("script");
+    const done = v => { delete window[cb]; sc.remove(); res(v); };
+    window[cb] = r => done(r && r.status !== "error" ? (r.table?.rows || []) : []);
+    sc.onerror = () => done([]);
+    sc.src = `https://docs.google.com/spreadsheets/d/${CFG.sheet}/gviz/tq?gid=${CFG.gid}&tq=${encodeURIComponent(tq)}&tqx=out:json;responseHandler:${cb}&_=${Date.now()}`;
+    document.head.appendChild(sc);
+  });
+}
+async function traerFotos(hs){
+  hs = [...new Set(hs)].filter(h => !FC[h] && /^[A-Za-z0-9_-]{16}$/.test(h)); const lotes = [];
+  for (let i = 0; i < hs.length; i += 5) lotes.push(hs.slice(i, i + 5));
+  await Promise.all(lotes.map(async L => {
+    const rows = await gvizRows("select B where " + L.map(h => `B starts with '${FOTO_PRE}${h} '`).join(" or "));
+    for (const r of rows) for (const c of r.c || []){
+      if (!c || typeof c.v !== "string" || !c.v.startsWith(FOTO_PRE)) continue;
+      const rest = c.v.slice(FOTO_PRE.length), sp = rest.indexOf(" "), h = rest.slice(0, sp), d = rest.slice(sp + 1).trim();
+      if (L.includes(h) && !FC[h] && /^data:image\//.test(d) && await fotoHash(d) === h){ FC[h] = d; SUB.add(h); }
+    }
+  }));
+}
+/* achica la foto del celu: cuadrada, 520 px, liviana (entra en una celda de la planilla) */
+async function prepararFoto(file){
+  const url = URL.createObjectURL(file);
+  try {
+    const img = await new Promise((ok, ko) => { const i = new Image(); i.onload = () => ok(i); i.onerror = ko; i.src = url; });
+    let S = 520, q = .85, out = "";
+    for (let n = 0; n < 14; n++){
+      const c = document.createElement("canvas"); c.width = c.height = S; const g = c.getContext("2d");
+      g.fillStyle = "#fff"; g.fillRect(0, 0, S, S);
+      const w = img.naturalWidth, h = img.naturalHeight, m = Math.min(w, h);
+      g.drawImage(img, (w - m) / 2, (h - m) / 2, m, m, 0, 0, S, S);
+      out = c.toDataURL("image/jpeg", q);
+      if (out.length <= 44000) return out;
+      if (q > .55) q -= .1; else { S -= 80; q = .8; }
+    }
+    return out.length <= 48000 ? out : null;
+  } catch { return null; } finally { URL.revokeObjectURL(url); }
+}
 function pSt(t, cls=""){ const el = $("#pSt"); el.textContent = t; el.className = "pst " + cls; }
+const fotoDe = (p, r) => r.startsWith("b:") ? baseFotos(p.base)[+r.slice(2)] : FC[r];
 async function openProds(){
   $("#prods").hidden = false; $("#pClaveBox").hidden = !!ls.get(K_CL); pSt("");
   if (!("subtle" in (window.crypto||{}))){ pSt("Tu navegador no permite publicar cambios. Actualizá Chrome.", "bad"); }
@@ -616,52 +682,116 @@ async function openProds(){
       aviso: s?.c && typeof s.c.aviso === "string" ? s.c.aviso : (cat.config.aviso || ""),
       pausado: s?.c && "pausado" in s.c ? !!s.c.pausado : !!cat.config.pausado,
       p: cat.productos.map(b => { const x = by[b.id];
-        return { id:b.id, nombre:b.nombre, cat:b.cat, foto:thumb(b), bp:b.precio, ba:b.antes||0, bs:!!b.sinStock,
+        return { id:b.id, base:b, nombre: x?.nm || b.nombre, desc: typeof x?.ds === "string" ? x.ds : (b.desc || ""), cat: x?.ct || b.cat,
+          bp:b.precio, ba:b.antes||0, bs:!!b.sinStock,
           precio: x && x.bp === b.precio && x.precio > 0 ? x.precio : b.precio,
           antes: x && x.ba === (b.antes||0) ? (x.antes||0) : (b.antes||0),
           sin: x && x.bs === !!b.sinStock ? !!x.sin : !!b.sinStock,
-          oc: !!x?.oc }; })
+          oc: !!x?.oc,
+          f: Array.isArray(x?.f) ? x.f.slice() : baseFotos(b).map((_, i) => "b:" + i), fchg: Array.isArray(x?.f) }; })
     };
+    for (const n of s?.n || []){
+      const q = { id:n.id, nuevo:true, nombre:n.nm||"", desc:n.ds||"", cat:n.ct||"", precio:n.precio||0, antes:n.antes||0, sin:!!n.sin, oc:!!n.oc, f:(n.f||[]).slice(), fchg:true };
+      let at = -1; ED.p.forEach((p,i) => { if (p.cat === q.cat) at = i; });
+      if (at < 0) ED.p.push(q); else ED.p.splice(at + 1, 0, q);
+    }
     drawProds();
+    const faltan = ED.p.flatMap(p => p.f).filter(r => !r.startsWith("b:") && !FC[r]);
+    if (faltan.length){ await traerFotos(faltan); drawProds(); }
   } catch (e) { $("#pList").innerHTML = `<div class="err">No pude cargar los productos. Revisá la conexión y probá de nuevo.</div>`; }
 }
+function rowHTML(p, i){
+  const fotos = p.f.map((r, k) => { const d = fotoDe(p, r);
+    return `<div class="ft${k ? "" : " main"}" data-fi="${k}">${d ? `<img src="${d}" alt="">` : `<span class="ld">cargando…</span>`}<button class="rm" data-rm="${k}" aria-label="Sacar foto">✕</button></div>`; }).join("");
+  const main = fotoDe(p, p.f[0] || "") || "";
+  return `<div class="prow${p.oc||p.sin?" off":""}" data-i="${i}">${main?`<img src="${main}" alt="" loading="lazy">`:`<div class="noimg"></div>`}<div class="nm"><b>${esc(p.nombre || "Producto nuevo")}${p.nuevo?"<em>NUEVO</em>":""}</b><small>${p.sin?"Sin stock":p.oc?"Oculto":"A la venta"}${p.cat?" · "+esc(p.cat):""}</small></div>
+      <div class="flds"><label>Precio<input inputmode="numeric" data-f="precio" value="${p.precio||""}" placeholder="$"></label><label>Precio tachado (opcional)<input inputmode="numeric" data-f="antes" value="${p.antes||""}" placeholder="—"></label></div>
+      <div class="tg2"><button class="tgl" data-t="stock" aria-pressed="${!p.sin}">${p.sin?"✖️ Sin stock":"✅ Hay stock"}</button><button class="tgl" data-t="ver" aria-pressed="${!p.oc}">${p.oc?"🙈 Oculto":"👁️ Se muestra"}</button></div>
+      <div class="fstrip">${fotos}<label class="add">＋<br>Foto<input type="file" accept="image/*" multiple data-add></label></div>
+      ${p.f.length > 1 ? `<div class="fhint">La de borde verde es la principal. Tocá otra para ponerla primera.</div>` : ""}
+      <details class="ed"${p._open?" open":""}><summary>✏️ Nombre, descripción y categoría</summary><div class="eg">
+        <label>Nombre<input data-s="nombre" value="${esc(p.nombre)}" placeholder="Ej: Labial Matte Ink"></label>
+        <label>Categoría<input data-s="cat" value="${esc(p.cat)}" list="pCats" placeholder="Ej: Maquillaje"></label>
+        <label>Descripción (opcional)<textarea data-s="desc" rows="2">${esc(p.desc)}</textarea></label></div></details>
+      ${p.nuevo?`<button class="delp" data-del>🗑️ Borrar este producto</button>`:""}</div>`;
+}
+function drawRow(i){ const el = $(`#pList .prow[data-i="${i}"]`); if (el) el.outerHTML = rowHTML(ED.p[i], i); }
 function drawProds(){
   $("#pAviso").value = ED.aviso; $("#pPausa").setAttribute("aria-pressed", ED.pausado); $("#pPausa").textContent = ED.pausado ? "Sí, pausados" : "No";
-  let cat = "", h = "";
+  $("#pCats").innerHTML = [...new Set(ED.p.map(p => p.cat).filter(Boolean))].map(c => `<option value="${esc(c)}">`).join("");
+  let cat = null, h = "";
   ED.p.forEach((p,i) => {
-    if (p.cat !== cat){ cat = p.cat; h += `<div class="sec" style="margin-top:14px;color:var(--muted)">${esc(cat)}</div>`; }
-    h += `<div class="prow${p.oc||p.sin?" off":""}" data-i="${i}">${p.foto?`<img src="${p.foto}" alt="" loading="lazy">`:`<div class="noimg"></div>`}<div class="nm"><b>${esc(p.nombre)}</b><small>${p.sin?"Sin stock":p.oc?"Oculto":"A la venta"}</small></div>
-      <div class="flds"><label>Precio<input inputmode="numeric" data-f="precio" value="${p.precio}"></label><label>Precio tachado (opcional)<input inputmode="numeric" data-f="antes" value="${p.antes||""}" placeholder="—"></label></div>
-      <div class="tg2"><button class="tgl" data-t="stock" aria-pressed="${!p.sin}">${p.sin?"✖️ Sin stock":"✅ Hay stock"}</button><button class="tgl" data-t="ver" aria-pressed="${!p.oc}">${p.oc?"🙈 Oculto":"👁️ Se muestra"}</button></div></div>`;
+    if (p.cat !== cat){ cat = p.cat; h += `<div class="sec" style="margin-top:14px;color:var(--muted)">${esc(cat || "Sin categoría")}</div>`; }
+    h += rowHTML(p, i);
   });
   $("#pList").innerHTML = h;
 }
 const dirty = () => pSt("Tenés cambios sin publicar");
-$("#pList").addEventListener("input", e => { const r = e.target.closest(".prow"), f = e.target.dataset.f; if (!r || !f) return; ED.p[+r.dataset.i][f] = +String(e.target.value).replace(/\D/g,"") || 0; dirty(); });
-$("#pList").addEventListener("click", e => { const b = e.target.closest("[data-t]"); if (!b) return; const p = ED.p[+b.closest(".prow").dataset.i];
-  if (b.dataset.t === "stock") p.sin = !p.sin; else p.oc = !p.oc; drawProds(); dirty(); });
+$("#pList").addEventListener("input", e => { const r = e.target.closest(".prow"); if (!r) return; const p = ED.p[+r.dataset.i];
+  if (e.target.dataset.f){ p[e.target.dataset.f] = +String(e.target.value).replace(/\D/g,"") || 0; dirty(); }
+  else if (e.target.dataset.s){ p[e.target.dataset.s] = e.target.value; dirty(); } });
+$("#pList").addEventListener("toggle", e => { const r = e.target.closest?.(".prow"); if (r && e.target.matches("details")) ED.p[+r.dataset.i]._open = e.target.open; }, true);
+$("#pList").addEventListener("change", async e => {
+  if (!e.target.matches("[data-add]")) return; const r = e.target.closest(".prow"), i = +r.dataset.i, p = ED.p[i];
+  const files = [...e.target.files]; if (!files.length) return; pSt("Preparando fotos…");
+  let mal = 0;
+  for (const f of files){ const d = await prepararFoto(f); if (!d){ mal++; continue; } const h = await fotoHash(d); FC[h] = d; p.f.push(h); p.fchg = true; }
+  guardarFC(); drawRow(i); pSt(mal ? `No pude abrir ${mal} foto(s). Probá con otra.` : "Tenés cambios sin publicar", mal ? "bad" : "");
+});
+$("#pList").addEventListener("click", e => {
+  const r = e.target.closest(".prow"); if (!r) return; const i = +r.dataset.i, p = ED.p[i];
+  const rm = e.target.closest("[data-rm]"), ft = e.target.closest("[data-fi]"), t = e.target.closest("[data-t]");
+  if (rm){ p.f.splice(+rm.dataset.rm, 1); p.fchg = true; drawRow(i); dirty(); return; }
+  if (ft){ const k = +ft.dataset.fi; if (k){ p.f.unshift(p.f.splice(k, 1)[0]); p.fchg = true; drawRow(i); dirty(); } return; }
+  if (e.target.closest("[data-del]")){ if (confirm("¿Borrar este producto nuevo?")){ ED.p.splice(i, 1); drawProds(); dirty(); } return; }
+  if (!t) return;
+  if (t.dataset.t === "stock") p.sin = !p.sin; else p.oc = !p.oc; drawRow(i); dirty(); });
+$("#pNew").onclick = () => {
+  if (!ED) return;
+  ED.p.unshift({ id: "n" + Date.now().toString(36), nuevo:true, nombre:"", desc:"", cat:"", precio:0, antes:0, sin:false, oc:false, f:[], fchg:true, _open:true });
+  drawProds(); dirty(); const el = $('#pList .prow[data-i="0"]'); el?.scrollIntoView({block:"center"}); el?.querySelector('[data-s="nombre"]')?.focus();
+};
 $("#pAviso").addEventListener("input", e => { ED.aviso = e.target.value; dirty(); });
 $("#pPausa").onclick = () => { ED.pausado = !ED.pausado; drawProds(); dirty(); };
 $("#prodBtn").onclick = openProds;
 $("#prodX").onclick = () => { $("#prods").hidden = true; };
 $("#prods").addEventListener("click", e => { if (e.target.id === "prods") $("#prods").hidden = true; });
+function enviar(texto, etiqueta){
+  const d = new URLSearchParams(); d.append("entry.2021034120", texto); d.append("entry.1737521343", etiqueta);
+  return fetch(FORM_URL, { method:"POST", mode:"no-cors", body:d });
+}
 $("#pPub").onclick = async () => {
   if (!ED) return;
+  const sinNombre = ED.p.find(p => p.nuevo && !p.nombre.trim()); if (sinNombre){ pSt("Ponele nombre al producto nuevo", "bad"); return; }
   const bad = ED.p.find(p => !p.precio); if (bad){ pSt(`Falta el precio de ${bad.nombre}`, "bad"); return; }
+  const sinCat = ED.p.find(p => p.nuevo && !p.cat.trim()); if (sinCat){ pSt(`Elegí la categoría de ${sinCat.nombre}`, "bad"); return; }
+  const sinFoto = ED.p.flatMap(p => p.f).find(r => !r.startsWith("b:") && !FC[r]); if (sinFoto){ pSt("Esperá a que carguen las fotos y probá de nuevo", "bad"); return; }
   const b = $("#pPub"); b.disabled = true; pSt("Publicando…");
   try {
     const key = await deriveKey(ls.get(K_CL) || $("#pClave").value);
     if (!key){ $("#pClaveBox").hidden = false; ls.set(K_CL, null); pSt("La clave de cambios no es correcta", "bad"); b.disabled = false; return; }
     ls.set(K_CL, key.norm); $("#pClaveBox").hidden = true;
+    const nuevas = [...new Set(ED.p.flatMap(p => p.f))].filter(r => !r.startsWith("b:") && !SUB.has(r));
+    for (let k = 0; k < nuevas.length; k++){
+      pSt(`Subiendo fotos ${k + 1} de ${nuevas.length}…`);
+      await enviar(FOTO_PRE + nuevas[k] + " " + FC[nuevas[k]], "FOTO (panel)");
+      SUB.add(nuevas[k]); ls.set(K_UP, [...SUB]);
+    }
+    pSt("Publicando…");
+    const tx = v => String(v || "").trim();
     const snap = { t: Date.now(), c: { aviso: ED.aviso.trim(), pausado: ED.pausado },
-      p: ED.p.map(p => ({ id:p.id, precio:p.precio, bp:p.bp, antes:p.antes||0, ba:p.ba, sin:p.sin, bs:p.bs, oc:p.oc })) };
+      p: ED.p.filter(p => !p.nuevo).map(p => { const o = { id:p.id, precio:p.precio, bp:p.bp, antes:p.antes||0, ba:p.ba, sin:p.sin, bs:p.bs, oc:p.oc };
+        if (tx(p.nombre) && tx(p.nombre) !== p.base.nombre) o.nm = tx(p.nombre);
+        if (tx(p.desc) !== tx(p.base.desc)) o.ds = tx(p.desc);
+        if (tx(p.cat) && tx(p.cat) !== p.base.cat) o.ct = tx(p.cat);
+        if (p.fchg) o.f = p.f.slice();
+        return o; }),
+      n: ED.p.filter(p => p.nuevo).map(p => ({ id:p.id, nm:tx(p.nombre), ds:tx(p.desc), ct:tx(p.cat), precio:p.precio, antes:p.antes||0, sin:p.sin, oc:p.oc, f:p.f.slice() })) };
     const json = JSON.stringify(snap);
     const sig = await crypto.subtle.sign({name:"Ed25519"}, key.k, new TextEncoder().encode(json));
-    const d = new URLSearchParams();
-    d.append("entry.2021034120", "CAMBIO[cherrymood] " + json + " FIRMA " + u64(sig));
-    d.append("entry.1737521343", "CAMBIO DE PRECIOS (panel)");
-    await fetch(FORM_URL, { method:"POST", mode:"no-cors", body:d });
+    await enviar("CAMBIO[cherrymood] " + json + " FIRMA " + u64(sig), "CAMBIO DE PRODUCTOS (panel)");
     pending = snap; ls.set(K_SNAP, snap);
+    const usadas = new Set(ED.p.flatMap(p => p.f)); for (const h in FC) if (!usadas.has(h)) delete FC[h]; guardarFC();
     pSt("✅ Publicado. En 1 o 2 minutos se ve en la tienda.", "ok"); toast("Cambios publicados");
     setTimeout(load, 20000);
   } catch (e) { pSt("No se pudo publicar. Revisá la conexión y probá de nuevo.", "bad"); }

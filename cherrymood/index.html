@@ -912,10 +912,60 @@ function applyCambio(s){
     if (x.bp === b.precio && x.precio > 0) p.precio = x.precio;
     if (x.ba === (b.antes || 0)){ if (x.antes) p.antes = x.antes; else delete p.antes; }
     if (x.bs === !!b.sinStock){ if (x.sin) p.sinStock = true; else delete p.sinStock; }
+    if (typeof x.nm === "string" && x.nm.trim()) p.nombre = x.nm.trim();
+    if (typeof x.ds === "string") p.desc = x.ds;
+    if (typeof x.ct === "string" && x.ct.trim()) p.cat = x.ct.trim();
     if (x.oc) p._oc = true;
+  }
+  for (const n of s.n || []){
+    if (!n || !n.id || byId(n.id) || n.oc || !n.nm || !(n.precio > 0)) continue;
+    const q = { id:n.id, cat:(n.ct||"Otros").trim(), nombre:n.nm.trim(), desc:n.ds||"", precio:n.precio, foto:"", fotos:[] };
+    if (n.antes) q.antes = n.antes; if (n.sin) q.sinStock = true;
+    let at = -1; D.productos.forEach((p,i) => { if (p.cat === q.cat) at = i; });
+    if (at < 0) D.productos.push(q); else D.productos.splice(at + 1, 0, q);
   }
   D.productos = D.productos.filter(p => !p._oc);
   if (s.c){ if (typeof s.c.aviso === "string") C().aviso = s.c.aviso; if ("pausado" in s.c) C().pausado = !!s.c.pausado; }
+}
+/* fotos que sube el dueño desde el panel: cada una en su fila, identificada por su huella (la firma del cambio las avala) */
+const FOTO_PRE = "FOTO[cherrymood] ";
+async function fotoHash(d){ return u64s(await crypto.subtle.digest("SHA-256", new TextEncoder().encode(d))).slice(0,16); }
+function gvizRows(tq){
+  return new Promise(res => {
+    const cb = "__gf" + Math.random().toString(36).slice(2), sc = document.createElement("script");
+    const done = v => { delete window[cb]; sc.remove(); res(v); };
+    window[cb] = r => done(r && r.status !== "error" ? (r.table?.rows || []) : []);
+    sc.onerror = () => done([]);
+    sc.src = `https://docs.google.com/spreadsheets/d/${SHEET.id}/gviz/tq?gid=${SHEET.gid}&tq=${encodeURIComponent(tq)}&tqx=out:json;responseHandler:${cb}&_=${Date.now()}`;
+    document.head.appendChild(sc);
+  });
+}
+async function loadFotos(hs){
+  hs = [...new Set(hs)].filter(h => /^[A-Za-z0-9_-]{16}$/.test(h)); const out = {}, lotes = [];
+  for (let i = 0; i < hs.length; i += 5) lotes.push(hs.slice(i, i + 5));
+  await Promise.all(lotes.map(async L => {
+    const rows = await gvizRows("select B where " + L.map(h => `B starts with '${FOTO_PRE}${h} '`).join(" or "));
+    for (const r of rows) for (const c of r.c || []){
+      if (!c || typeof c.v !== "string" || !c.v.startsWith(FOTO_PRE)) continue;
+      const rest = c.v.slice(FOTO_PRE.length), sp = rest.indexOf(" "), h = rest.slice(0, sp), d = rest.slice(sp + 1).trim();
+      if (!L.includes(h) || out[h] || !/^data:image\/(jpeg|png|webp);base64,[A-Za-z0-9+/=]+$/.test(d)) continue;
+      try { if (await fotoHash(d) === h) out[h] = d; } catch {}
+    }
+  }));
+  return out;
+}
+async function applyFotos(s){
+  const lista = [...(s.p || []).filter(x => Array.isArray(x.f)), ...(s.n || []).filter(n => Array.isArray(n.f))];
+  if (!lista.length) return;
+  const F = await loadFotos(lista.flatMap(x => x.f.filter(r => !r.startsWith("b:"))));
+  for (const x of lista){
+    const p = byId(x.id); if (!p) continue;
+    const b = BASE.productos.find(q => q.id === x.id), bl = b ? [b.foto, ...(b.fotos || [])].filter(Boolean) : [];
+    const L = x.f.map(r => r.startsWith("b:") ? bl[+r.slice(2)] : F[r]).filter(Boolean);
+    if (!L.length && x.f.length) continue;
+    p.foto = L[0] || ""; p.fotos = L.slice(1);
+  }
+  refreshCustomer();
 }
 function loadCambios(conQuery = true){
   if (window.claude?.use) return;
@@ -930,7 +980,7 @@ function loadCambios(conQuery = true){
         if (!c || typeof c.v !== "string" || !c.v.startsWith("CAMBIO[cherrymood] ")) continue;
         const v = await verifyCambio(c.v); if (v && (!best || v.t > best.t)) best = v;
       }
-      if (best){ applyCambio(best); cleanCart(); refreshCustomer(); }
+      if (best){ applyCambio(best); cleanCart(); refreshCustomer(); applyFotos(best).catch(()=>{}); }
     } catch {}
   };
   sc.onerror = done;
