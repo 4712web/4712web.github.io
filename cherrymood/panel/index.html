@@ -623,7 +623,7 @@ async function loadCat(){
 }
 const thumb = p => p.foto || p.colores?.[0]?.foto || p.fotos?.[0] || "";
 const baseFotos = b => b ? [b.foto, ...(b.fotos || [])].filter(Boolean) : [];
-const K_FC = "panel_fotos_" + CFG.key, K_UP = "panel_subidas_" + CFG.key;
+const K_FC = "panel_fotos_" + CFG.key, K_UP = "panel_subidas2_" + CFG.key;
 const FC = ls.get(K_FC) || {};            // huella -> foto (las que subiste desde este celu)
 const SUB = new Set(ls.get(K_UP) || []);  // huellas ya subidas a la planilla
 const FOTO_PRE = "FOTO[cherrymood] ";
@@ -639,17 +639,54 @@ function gvizRows(tq){
     document.head.appendChild(sc);
   });
 }
+function armarFotos(rows, L){
+  const parts = {};
+  for (const r of rows) for (const c of r.c || []){
+    if (!c || typeof c.v !== "string" || !c.v.startsWith(FOTO_PRE)) continue;
+    const t = c.v.slice(FOTO_PRE.length), a = t.indexOf(" "), h = t.slice(0, a); if (!L.includes(h)) continue;
+    const rest = t.slice(a + 1), m = rest.match(/^(\d+)\/(\d+) ([\s\S]*)$/);
+    const P = parts[h] = parts[h] || { n: 0, c: {} };
+    if (m){ P.n = +m[2]; P.c[+m[1]] = m[3].trim(); } else { P.n = 1; P.c[1] = rest.trim(); }
+  }
+  return parts;
+}
+async function juntarFotos(parts){
+  const out = {};
+  for (const h in parts){ const P = parts[h]; if (!P.n) continue; let d = "";
+    for (let i = 1; i <= P.n; i++){ if (P.c[i] == null){ d = null; break; } d += P.c[i]; }
+    if (d && /^data:image\/(jpeg|png|webp);base64,[A-Za-z0-9+/=]+$/.test(d)){ try { if (await fotoHash(d) === h) out[h] = d; } catch {} } }
+  return out;
+}
+async function leerFotos(hs){
+  const lotes = [], partes = {};
+  for (let i = 0; i < hs.length; i += 4) lotes.push(hs.slice(i, i + 4));
+  await Promise.all(lotes.map(async L => Object.assign(partes, armarFotos(await gvizRows("select B where " + L.map(h => `B starts with '${FOTO_PRE}${h} '`).join(" or ")), L))));
+  return partes;
+}
 async function traerFotos(hs){
-  hs = [...new Set(hs)].filter(h => !FC[h] && /^[A-Za-z0-9_-]{16}$/.test(h)); const lotes = [];
-  for (let i = 0; i < hs.length; i += 5) lotes.push(hs.slice(i, i + 5));
-  await Promise.all(lotes.map(async L => {
-    const rows = await gvizRows("select B where " + L.map(h => `B starts with '${FOTO_PRE}${h} '`).join(" or "));
-    for (const r of rows) for (const c of r.c || []){
-      if (!c || typeof c.v !== "string" || !c.v.startsWith(FOTO_PRE)) continue;
-      const rest = c.v.slice(FOTO_PRE.length), sp = rest.indexOf(" "), h = rest.slice(0, sp), d = rest.slice(sp + 1).trim();
-      if (L.includes(h) && !FC[h] && /^data:image\//.test(d) && await fotoHash(d) === h){ FC[h] = d; SUB.add(h); }
-    }
-  }));
+  hs = [...new Set(hs)].filter(h => !FC[h] && /^[A-Za-z0-9_-]{16}$/.test(h)); if (!hs.length) return;
+  const F = await juntarFotos(await leerFotos(hs));
+  for (const h in F){ FC[h] = F[h]; SUB.add(h); }
+}
+/* cada foto viaja partida en pedacitos chicos (el formulario de Google no acepta textos largos) */
+const TROZO = 3500;
+const trozos = d => { const L = []; for (let i = 0; i < d.length; i += TROZO) L.push(d.slice(i, i + TROZO)); return L; };
+async function subirFotos(hs, avisar){
+  const tareas = hs.flatMap(h => trozos(FC[h]).map((t, i, A) => ({ h, txt: `${FOTO_PRE}${h} ${i + 1}/${A.length} ${t}`, i: i + 1 })));
+  const enviarTodas = async lista => { let k = 0, hechas = 0;
+    await Promise.all([0,1,2].map(async () => { while (k < lista.length){ const t = lista[k++]; try { await enviar(t.txt, "FOTO (panel)"); } catch {} hechas++; avisar(`Subiendo fotos… ${Math.round(hechas / lista.length * 100)}%`); } })); };
+  await enviarTodas(tareas);
+  let faltan = tareas;
+  for (let intento = 0; intento < 8 && faltan.length; intento++){
+    avisar("Revisando que las fotos hayan llegado…");
+    await new Promise(r => setTimeout(r, 6000));
+    const partes = await leerFotos([...new Set(faltan.map(t => t.h))]);
+    faltan = faltan.filter(t => !(partes[t.h] && partes[t.h].c[t.i] != null));
+    if (faltan.length && (intento === 3 || intento === 6)) await enviarTodas(faltan);
+  }
+  const ok = hs.filter(h => !faltan.some(t => t.h === h));
+  ok.forEach(h => SUB.add(h)); ls.set(K_UP, [...SUB]);
+  return hs.length - ok.length;
 }
 /* achica la foto del celu: cuadrada, 520 px, liviana (entra en una celda de la planilla) */
 async function prepararFoto(file){
@@ -663,10 +700,10 @@ async function prepararFoto(file){
       const w = img.naturalWidth, h = img.naturalHeight, m = Math.min(w, h);
       g.drawImage(img, (w - m) / 2, (h - m) / 2, m, m, 0, 0, S, S);
       out = c.toDataURL("image/jpeg", q);
-      if (out.length <= 44000) return out;
+      if (out.length <= 30000) return out;
       if (q > .55) q -= .1; else { S -= 80; q = .8; }
     }
-    return out.length <= 48000 ? out : null;
+    return out.length <= 40000 ? out : null;
   } catch { return null; } finally { URL.revokeObjectURL(url); }
 }
 function pSt(t, cls=""){ const el = $("#pSt"); el.textContent = t; el.className = "pst " + cls; }
@@ -772,11 +809,9 @@ $("#pPub").onclick = async () => {
     if (!key){ $("#pClaveBox").hidden = false; ls.set(K_CL, null); pSt("La clave de cambios no es correcta", "bad"); b.disabled = false; return; }
     ls.set(K_CL, key.norm); $("#pClaveBox").hidden = true;
     const nuevas = [...new Set(ED.p.flatMap(p => p.f))].filter(r => !r.startsWith("b:") && !SUB.has(r));
-    for (let k = 0; k < nuevas.length; k++){
-      pSt(`Subiendo fotos ${k + 1} de ${nuevas.length}…`);
-      await enviar(FOTO_PRE + nuevas[k] + " " + FC[nuevas[k]], "FOTO (panel)");
-      SUB.add(nuevas[k]); ls.set(K_UP, [...SUB]);
-    }
+    let fallaron = 0;
+    if (nuevas.length) fallaron = await subirFotos(nuevas, t => pSt(t));
+    if (fallaron){ pSt(`No llegaron ${fallaron} foto(s). Revisá la señal y tocá Publicar de nuevo.`, "bad"); b.disabled = false; return; }
     pSt("Publicando…");
     const tx = v => String(v || "").trim();
     const snap = { t: Date.now(), c: { aviso: ED.aviso.trim(), pausado: ED.pausado },

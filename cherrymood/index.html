@@ -940,17 +940,30 @@ function gvizRows(tq){
     document.head.appendChild(sc);
   });
 }
+function armarFotos(rows, L){
+  const parts = {};
+  for (const r of rows) for (const c of r.c || []){
+    if (!c || typeof c.v !== "string" || !c.v.startsWith(FOTO_PRE)) continue;
+    const t = c.v.slice(FOTO_PRE.length), a = t.indexOf(" "), h = t.slice(0, a); if (!L.includes(h)) continue;
+    const rest = t.slice(a + 1), m = rest.match(/^(\d+)\/(\d+) ([\s\S]*)$/);
+    const P = parts[h] = parts[h] || { n: 0, c: {} };
+    if (m){ P.n = +m[2]; P.c[+m[1]] = m[3].trim(); } else { P.n = 1; P.c[1] = rest.trim(); }
+  }
+  return parts;
+}
+async function juntarFotos(parts){
+  const out = {};
+  for (const h in parts){ const P = parts[h]; if (!P.n) continue; let d = "";
+    for (let i = 1; i <= P.n; i++){ if (P.c[i] == null){ d = null; break; } d += P.c[i]; }
+    if (d && /^data:image\/(jpeg|png|webp);base64,[A-Za-z0-9+/=]+$/.test(d)){ try { if (await fotoHash(d) === h) out[h] = d; } catch {} } }
+  return out;
+}
 async function loadFotos(hs){
   hs = [...new Set(hs)].filter(h => /^[A-Za-z0-9_-]{16}$/.test(h)); const out = {}, lotes = [];
-  for (let i = 0; i < hs.length; i += 5) lotes.push(hs.slice(i, i + 5));
+  for (let i = 0; i < hs.length; i += 4) lotes.push(hs.slice(i, i + 4));
   await Promise.all(lotes.map(async L => {
     const rows = await gvizRows("select B where " + L.map(h => `B starts with '${FOTO_PRE}${h} '`).join(" or "));
-    for (const r of rows) for (const c of r.c || []){
-      if (!c || typeof c.v !== "string" || !c.v.startsWith(FOTO_PRE)) continue;
-      const rest = c.v.slice(FOTO_PRE.length), sp = rest.indexOf(" "), h = rest.slice(0, sp), d = rest.slice(sp + 1).trim();
-      if (!L.includes(h) || out[h] || !/^data:image\/(jpeg|png|webp);base64,[A-Za-z0-9+/=]+$/.test(d)) continue;
-      try { if (await fotoHash(d) === h) out[h] = d; } catch {}
-    }
+    Object.assign(out, await juntarFotos(armarFotos(rows, L)));
   }));
   return out;
 }

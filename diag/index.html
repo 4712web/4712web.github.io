@@ -25,13 +25,16 @@ const cellDate = c => c && c.f ? c.f : (c && c.v) || "";
   if (!last) return;
   const hs = [...new Set([...(last.p||[]), ...(last.n||[])].flatMap(x => Array.isArray(x.f) ? x.f : []).filter(r => !r.startsWith("b:")))];
   add(`Fotos nuevas que pide el último cambio: <b>${hs.length}</b><br><small>${hs.join(" ")}</small>`);
-  const r2 = await q(`select A, B, C where B starts with 'FOTO[${K}]' order by A desc limit 60`);
+  const r2 = await q(`select A, B, C where B starts with 'FOTO[${K}]' order by A desc limit 400`);
   if (r2.status !== "ok") add("No pude leer las fotos: " + (r2.status||"") + " " + JSON.stringify(r2.errors||""), "bad");
   const fr = r2.table?.rows || []; add(`Filas de FOTO en la planilla: <b>${fr.length}</b>`, fr.length ? "ok" : "bad");
-  for (const r of fr.slice(0, 20)){ const v = r.c?.[1]?.v || ""; const rest = v.slice(`FOTO[${K}] `.length), sp = rest.indexOf(" "), h = rest.slice(0, sp), d = rest.slice(sp+1).trim();
-    let hh = ""; try { hh = u64(await crypto.subtle.digest("SHA-256", new TextEncoder().encode(d))).slice(0,16); } catch {}
-    add(`<small>${cellDate(r.c?.[0])}</small><br>huella ${h} · largo total ${v.length} · empieza bien: ${/^data:image\//.test(d) ? "sí" : "<span class=bad>no</span>"} · termina: …${esc(v.slice(-12))} · verificación: ${hh === h ? "<span class=ok>OK</span>" : "<span class=bad>NO coincide ("+hh+")</span>"} · ${hs.includes(h) ? "la usa el último cambio" : "no usada"}${d.length < 200000 && /^data:image/.test(d) ? `<br><img src="${d}" style="width:64px;height:64px;object-fit:cover;border-radius:8px;margin-top:6px">` : ""}`); }
-  const falt = hs.filter(h => !fr.some(r => (r.c?.[1]?.v||"").startsWith(`FOTO[${K}] ${h} `)));
+  const parts = {};
+  for (const r of fr){ const v = r.c?.[1]?.v || ""; const t = v.slice(`FOTO[${K}] `.length), a = t.indexOf(" "), h = t.slice(0, a), rest = t.slice(a+1), m = rest.match(/^(\d+)\/(\d+) ([\s\S]*)$/);
+    const P = parts[h] = parts[h] || { n:0, c:{}, f: cellDate(r.c?.[0]) }; if (m){ P.n = +m[2]; P.c[+m[1]] = m[3].trim(); } else { P.n = 1; P.c[1] = rest.trim(); } }
+  for (const h in parts){ const P = parts[h]; let d = ""; for (let i = 1; i <= P.n; i++){ if (P.c[i] == null){ d = null; break; } d += P.c[i]; }
+    let hh = ""; if (d) try { hh = u64(await crypto.subtle.digest("SHA-256", new TextEncoder().encode(d))).slice(0,16); } catch {}
+    add(`<small>${P.f}</small><br>huella ${h} · pedazos ${Object.keys(P.c).length}/${P.n} · ${d ? (hh === h ? "<span class=ok>completa y verificada</span>" : "<span class=bad>no coincide</span>") : "<span class=bad>incompleta</span>"} · ${hs.includes(h) ? "la usa el último cambio" : "no usada"}${d && hh === h ? `<br><img src="${d}" style="width:64px;height:64px;object-fit:cover;border-radius:8px;margin-top:6px">` : ""}`); }
+  const falt = hs.filter(h => !parts[h]);
   add(falt.length ? `Fotos que NO llegaron a la planilla: <b>${falt.length}</b>` : "Todas las fotos del último cambio están en la planilla", falt.length ? "bad" : "ok");
 })();
 function esc(s){ return String(s).replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c])); }
