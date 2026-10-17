@@ -689,21 +689,26 @@ async function subirFotos(hs, avisar){
   return hs.length - ok.length;
 }
 /* achica la foto del celu: cuadrada, 520 px, liviana (entra en una celda de la planilla) */
+/* un solo lienzo reutilizado: el iPhone tiene un límite de memoria para lienzos y si se crean muchos deja de abrir fotos */
+let LIENZO = null;
 async function prepararFoto(file){
   const url = URL.createObjectURL(file);
   try {
-    const img = await new Promise((ok, ko) => { const i = new Image(); i.onload = () => ok(i); i.onerror = ko; i.src = url; });
-    let S = 520, q = .85, out = "";
-    for (let n = 0; n < 14; n++){
-      const c = document.createElement("canvas"); c.width = c.height = S; const g = c.getContext("2d");
+    const img = await new Promise((ok, ko) => { const i = new Image(); i.decoding = "async"; i.onload = () => ok(i); i.onerror = ko; i.src = url; });
+    if (!LIENZO) LIENZO = document.createElement("canvas");
+    const c = LIENZO, w = img.naturalWidth, h = img.naturalHeight, m = Math.min(w, h);
+    const pasos = [[480,.82],[480,.72],[480,.62],[400,.7],[400,.58],[320,.65],[260,.6]];
+    let out = "";
+    for (const [S, q] of pasos){
+      if (c.width !== S){ c.width = S; c.height = S; }
+      const g = c.getContext("2d"); if (!g) return null;
       g.fillStyle = "#fff"; g.fillRect(0, 0, S, S);
-      const w = img.naturalWidth, h = img.naturalHeight, m = Math.min(w, h);
       g.drawImage(img, (w - m) / 2, (h - m) / 2, m, m, 0, 0, S, S);
       out = c.toDataURL("image/jpeg", q);
-      if (out.length <= 30000) return out;
-      if (q > .55) q -= .1; else { S -= 80; q = .8; }
+      if (out.length <= 30000) break;
     }
-    return out.length <= 40000 ? out : null;
+    img.src = "";
+    return out.length <= 40000 && out.startsWith("data:image/jpeg") ? out : null;
   } catch { return null; } finally { URL.revokeObjectURL(url); }
 }
 function pSt(t, cls=""){ const el = $("#pSt"); el.textContent = t; el.className = "pst " + cls; }
