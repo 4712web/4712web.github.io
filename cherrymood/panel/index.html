@@ -573,7 +573,7 @@ function waNum(t){ let d = String(t || "").replace(/\D/g, ""); if (!d) return ""
   if (d.length === 10 && !d.startsWith("15")) return "549" + d; if (d.length === 8 && d.startsWith("15")) return "54911" + d.slice(2); if (d.length === 8) return "54911" + d; return d.length >= 10 ? "549" + d.slice(-10) : ""; }
 function waAviso(o, tipo){
   const nom = (o.cliente || "").split(" ")[0], num = o.id && !/^\d+$/.test(o.id) ? " #" + o.id : "";
-  const T = { ok: `¡Hola ${nom}! 👋 Recibimos tu pedido${num} en ${CFG.nombre}. Ya lo estamos preparando 🔥`,
+  const T = { ok: `¡Hola ${nom}! 👋 Recibimos tu pedido${num} en ${CFG.nombre}. ${/retir/i.test(o.entrega) ? "Te aviso cuando esté listo para retirar 🏠" : "Te aviso cuando sale 🛵"}`,
     salio: `¡Hola ${nom}! 🛵 Tu pedido${num} de ${CFG.nombre} ya salió, en un ratito llega. ¡Que lo disfrutes!`,
     listo: `¡Hola ${nom}! ✅ Tu pedido${num} de ${CFG.nombre} ya está listo para retirar. ¡Te esperamos!` };
   return "https://wa.me/" + waNum(o.tel) + "?text=" + encodeURIComponent(T[tipo]);
