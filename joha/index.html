@@ -81,6 +81,7 @@ input{font:inherit;color:inherit}
 .ctl .m{border:1px solid var(--line)}
 .ctl span{min-width:26px;text-align:center;font:800 15px var(--body)}
 .ctl.has{background:var(--panel-2);padding:2px}
+.subt{padding:16px 14px 8px;border-top:1px solid var(--line);font:400 22px var(--display);text-transform:uppercase;color:var(--pink);letter-spacing:.02em}
 .tops{display:flex;flex-wrap:wrap;gap:8px;margin:4px 0 6px}
 .tops button{padding:11px 14px;border-radius:999px;border:1px solid var(--line);background:var(--panel);font:700 14px var(--body)}
 .tops button[aria-pressed="true"]{background:var(--pink);border-color:var(--pink);color:#fff;box-shadow:0 0 12px rgba(255,45,149,.45)}
@@ -200,11 +201,11 @@ const P = [
   { id:"bking", c:"Hamburguesas", n:"Doble King", d:"Doble cheese, lechuga, tomate y salsa king · con papas y jugo de regalo", p:14000, img:"bking", hot:1, add:ADDS },
   { id:"bcuar", c:"Hamburguesas", n:"Doble Cuartos", d:"Doble cheese, ketchup, mostaza, cebolla y salsa especial · con papas y jugo de regalo", p:14000, img:"bcuar", add:ADDS },
   { id:"bny", c:"Hamburguesas", n:"Doble New York", d:"Doble cheese, bacon, tomate y salsa especial · con papas y jugo de regalo", p:14000, img:"bny", add:ADDS },
-  { id:"he1", c:"Explosivas", n:"Explosiva simple", d:"Bañada en cheddar y bacon · viene con papas y bebida", p:12000, img:"he1", add:ADDS },
-  { id:"he2", c:"Explosivas", n:"Explosiva doble", d:"Bañada en cheddar y bacon · viene con papas y bebida", p:15000, img:"he2", hot:1, add:ADDS },
-  { id:"he3", c:"Explosivas", n:"Explosiva triple", d:"Bañada en cheddar y bacon · viene con papas y bebida", p:18000, img:"he3", add:ADDS },
-  { id:"he4", c:"Explosivas", n:"Explosiva cuádruple", d:"Bañada en cheddar y bacon · viene con papas y bebida", p:21000, img:"he4", add:ADDS },
-  { id:"he5", c:"Explosivas", n:"Explosiva quíntuple", d:"Bañada en cheddar y bacon · viene con papas y bebida", p:24000, img:"he5", add:ADDS },
+  { id:"he1", c:"Hamburguesas", sub:"Hamburguesas explosivas 💥", n:"Explosiva simple", d:"Bañada en cheddar y bacon · viene con papas y bebida", p:12000, img:"he1", add:ADDS },
+  { id:"he2", c:"Hamburguesas", sub:"Hamburguesas explosivas 💥", n:"Explosiva doble", d:"Bañada en cheddar y bacon · viene con papas y bebida", p:15000, img:"he2", hot:1, add:ADDS },
+  { id:"he3", c:"Hamburguesas", sub:"Hamburguesas explosivas 💥", n:"Explosiva triple", d:"Bañada en cheddar y bacon · viene con papas y bebida", p:18000, img:"he3", add:ADDS },
+  { id:"he4", c:"Hamburguesas", sub:"Hamburguesas explosivas 💥", n:"Explosiva cuádruple", d:"Bañada en cheddar y bacon · viene con papas y bebida", p:21000, img:"he4", add:ADDS },
+  { id:"he5", c:"Hamburguesas", sub:"Hamburguesas explosivas 💥", n:"Explosiva quíntuple", d:"Bañada en cheddar y bacon · viene con papas y bebida", p:24000, img:"he5", add:ADDS },
   { id:"tsim", c:"Tortillas de papa", n:"Tortilla simple", d:"", p:10000, ic:"🥔" },
   { id:"trel", c:"Tortillas de papa", n:"Tortilla rellena", d:"Rellena de jamón y queso", p:15000, ic:"🥔" },
   { id:"tche", c:"Tortillas de papa", n:"Tortilla rellena cheese explosiva", d:"Rellena de cheddar", p:18000, img:"tchee" },
@@ -316,8 +317,8 @@ const [ab, txt] = estado(); $("open").classList.toggle("off", !ab); $("open").qu
 
 function render(){
   $("promos").innerHTML = P.filter(p => p.c === "Promos").map(p => { const n = Q[p.id] || 0; return `<article class="pc ${n ? "on" : ""}"><div class="ph"><img src="${IMG[p.img]}" alt="" loading="lazy"><span class="x3">x${p.x}<small>burgers</small></span></div><div class="tx"><b>${p.n}${p.hot ? '<span class="hot">Promo del día</span>' : ""}</b><span class="ds">${p.d}</span><div class="bt">${priceHTML(p)}${ctl(p.id, n)}</div></div></article>`; }).join("");
-  $("menu").innerHTML = CATS.map(c => `<section class="sec" id="c-${c.replace(/\W/g,"")}"><div class="ttl" style="padding:0 0 12px"><h2>${c.split(" ")[0]}${c.includes(" ") ? ` <span>${c.split(" ").slice(1).join(" ")}</span>` : ""}</h2></div><div class="list">${P.filter(p => p.c === c).map(p => { const n = (p.top || p.add) ? nV(p.id) : (Q[p.id] || 0);
-    return `<div class="row ${n ? "on" : ""}">${p.img ? `<img class="th" src="${IMG[p.img]}" alt="" loading="lazy">` : `<span class="th ic">${p.ic}</span>`}<div class="nm"><b>${p.n}${p.hot ? `<span class="hot">${p.c === "Burgers" ? "Nueva" : "Top"}</span>` : ""}</b>${p.d ? `<small>${p.d}</small>` : ""}${priceHTML(p)}</div>${(p.top || p.add) ? ctlTop(p.id, n) : ctl(p.id, n)}</div>`; }).join("")}</div></section>`).join("");
+  $("menu").innerHTML = CATS.map(c => `<section class="sec" id="c-${c.replace(/\W/g,"")}"><div class="ttl" style="padding:0 0 12px"><h2>${c.split(" ")[0]}${c.includes(" ") ? ` <span>${c.split(" ").slice(1).join(" ")}</span>` : ""}</h2></div><div class="list">${P.filter(p => p.c === c).map((p, i, a) => { const n = (p.top || p.add) ? nV(p.id) : (Q[p.id] || 0);
+    return `${p.sub && p.sub !== (a[i-1] || {}).sub ? `<div class="subt">${p.sub}</div>` : ""}<div class="row ${n ? "on" : ""}">${p.img ? `<img class="th" src="${IMG[p.img]}" alt="" loading="lazy">` : `<span class="th ic">${p.ic}</span>`}<div class="nm"><b>${p.n}${p.hot ? `<span class="hot">${p.c === "Burgers" ? "Nueva" : "Top"}</span>` : ""}</b>${p.d ? `<small>${p.d}</small>` : ""}${priceHTML(p)}</div>${(p.top || p.add) ? ctlTop(p.id, n) : ctl(p.id, n)}</div>`; }).join("")}</div></section>`).join("");
 }
 function bar(){ const n = units(), b = $("cartBtn"); $("cart").hidden = !n; $("cN").textContent = n; $("cT").textContent = fmt(total()) + (unknown() ? " +" : ""); b.classList.remove("bump"); void b.offsetWidth; b.classList.add("bump"); }
 $("cats").innerHTML = CATS.map((c,i) => `<button class="cat" data-cat="${c}" aria-current="${i === 0}">${c}</button>`).join("");
