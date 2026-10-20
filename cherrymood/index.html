@@ -669,7 +669,7 @@ document.addEventListener("click", e => {
   if (t.dataset.inc){ e.stopPropagation(); addLine({id:t.dataset.inc,o:null,ex:[],note:"",q:1}); return; }
   if (t.dataset.dec){ e.stopPropagation(); addLine({id:t.dataset.dec,o:null,ex:[],note:"",q:-1}); return; }
   if (t.dataset.close){ $("#"+t.dataset.close).hidden = true; return; }
-  if (t.dataset.tab){ const el=document.getElementById(t.dataset.tab); if(el) window.scrollTo({top: el.getBoundingClientRect().top + window.scrollY - $(".sticky").offsetHeight - 4}); return; }
+  if (t.dataset.tab){ irA(t.dataset.tab); return; }
   if (t.dataset.col){ const c=t.dataset.col; collapsed.has(c)?collapsed.delete(c):collapsed.add(c); renderMenu(); return; }
   if (t.dataset.mq){ mState.q = Math.max(1, mState.q + +t.dataset.mq); renderProduct(); return; }
   if (t.dataset.lq){ const l = cart[+t.dataset.lq]; l.q += +t.dataset.d; cart = cart.filter(x=>x.q>0); renderCart(); renderMenu(); updateBar(); return; }
@@ -708,7 +708,23 @@ $("#send").addEventListener("click", e => {
 /* ================= MODO DUEÑO ================= */
 let otab = "prod", dirty = false, artCap = null, pickTarget = null;
 function setDirty(v){ dirty = v; $("#oPublish").textContent = dirty ? "Publicar cambios" : "Publicar"; }
-function refreshCustomer(){ renderHead(); renderMenu(); updateBar(); }
+/* ir a una sección y corregir si algo se movió mientras carga (fotos, cambios del dueño) */
+let irTimer = 0;
+function irA(id){
+  const go = () => { const el = document.getElementById(id); if (!el) return; const y = el.getBoundingClientRect().top + window.scrollY - $(".sticky").offsetHeight - 4; if (Math.abs(window.scrollY - y) > 3) window.scrollTo({top: y}); };
+  go(); clearTimeout(irTimer); let n = 0;
+  const tick = () => { go(); if (++n < 6) irTimer = setTimeout(tick, 200 * n); };
+  irTimer = setTimeout(tick, 120);
+  const stop = () => { clearTimeout(irTimer); removeEventListener("touchstart", stop); removeEventListener("wheel", stop); };
+  addEventListener("touchstart", stop, {passive:true}); addEventListener("wheel", stop, {passive:true});
+}
+function refreshCustomer(){
+  // mantener a la clienta en la misma sección aunque cambie el contenido de arriba
+  const st = $(".sticky").getBoundingClientRect().bottom; let ancla = null, off = 0;
+  for (const sec of document.querySelectorAll("#menu section")){ const r = sec.getBoundingClientRect(); if (r.bottom > st){ ancla = sec.id; off = r.top; break; } }
+  renderHead(); renderMenu(); updateBar();
+  if (ancla && window.scrollY > 50){ const el = document.getElementById(ancla); if (el) window.scrollBy(0, el.getBoundingClientRect().top - off); }
+}
 let rt; const refreshSoon = () => { clearTimeout(rt); rt = setTimeout(refreshCustomer, 250); };
 function parseList(txt){ return String(txt||"").split("\n").map(s=>s.trim()).filter(Boolean).map(s=>{ const m = s.match(/^(.*?)(?:\s*[+=]\s*\$?\s*([\d.,]+))?$/); return {n:m[1].trim(), p: m[2] ? +m[2].replace(/[.,]/g,"") : 0}; }).filter(o=>o.n); }
 const listTxt = arr => (arr||[]).map(o=>o.n + (o.p?` +${o.p}`:"")).join("\n");
