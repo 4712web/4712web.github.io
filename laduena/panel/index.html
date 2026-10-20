@@ -691,7 +691,7 @@ const trozos = d => { const L = []; for (let i = 0; i < d.length; i += TROZO) L.
 async function subirFotos(hs, avisar){
   const tareas = hs.flatMap(h => trozos(FC[h]).map((t, i, A) => ({ h, txt: `${FOTO_PRE}${h} ${i + 1}/${A.length} ${t}`, i: i + 1 })));
   const enviarTodas = async lista => { let k = 0, hechas = 0;
-    await Promise.all([0,1,2].map(async () => { while (k < lista.length){ const t = lista[k++]; try { await enviar(t.txt, "FOTO (panel)"); } catch {} hechas++; avisar(`Subiendo fotos… ${Math.round(hechas / lista.length * 100)}%`); } })); };
+    await Promise.all([0,1,2,3,4,5].map(async () => { while (k < lista.length){ const t = lista[k++]; try { await enviar(t.txt, "FOTO (panel)"); } catch {} hechas++; avisar(`Subiendo fotos… ${Math.round(hechas / lista.length * 100)}%`); } })); };
   await enviarTodas(tareas);
   let faltan = tareas;
   for (let intento = 0; intento < 8 && faltan.length; intento++){
@@ -714,18 +714,19 @@ async function prepararFoto(file){
     const img = await new Promise((ok, ko) => { const i = new Image(); i.decoding = "async"; i.onload = () => ok(i); i.onerror = ko; i.src = url; });
     if (!LIENZO) LIENZO = document.createElement("canvas");
     const c = LIENZO, w = img.naturalWidth, h = img.naturalHeight, m = Math.min(w, h);
-    const pasos = [[720,.82],[720,.74],[640,.74],[560,.74],[480,.72],[400,.68],[320,.65]];
+    const pasos = [[960,.88],[960,.82],[880,.8],[800,.78],[720,.76],[640,.74],[520,.7]];
+    const webp = (() => { try { const t = document.createElement("canvas"); t.width = t.height = 2; return t.toDataURL("image/webp", .8).startsWith("data:image/webp"); } catch { return false; } })();
     let out = "";
     for (const [S, q] of pasos){
       if (c.width !== S){ c.width = S; c.height = S; }
       const g = c.getContext("2d"); if (!g) return null;
-      g.fillStyle = "#fff"; g.fillRect(0, 0, S, S);
+      g.imageSmoothingEnabled = true; g.imageSmoothingQuality = "high"; g.fillStyle = "#fff"; g.fillRect(0, 0, S, S);
       g.drawImage(img, (w - m) / 2, (h - m) / 2, m, m, 0, 0, S, S);
-      out = c.toDataURL("image/jpeg", q);
-      if (out.length <= 80000) break;
+      out = c.toDataURL(webp ? "image/webp" : "image/jpeg", q);
+      if (out.length <= 180000) break;
     }
     img.src = "";
-    return out.length <= 100000 && out.startsWith("data:image/jpeg") ? out : null;
+    return out.length <= 220000 && /^data:image\/(jpeg|webp)/.test(out) ? out : null;
   } catch { return null; } finally { URL.revokeObjectURL(url); }
 }
 function pSt(t, cls=""){ const el = $("#pSt"); el.textContent = t; el.className = "pst " + cls; }
