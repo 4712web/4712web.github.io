@@ -121,7 +121,7 @@ input{font:inherit;color:inherit}
 .alias{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:2px 10px;align-items:center;padding:12px 14px;border-radius:14px;background:rgba(255,45,149,.1);border:1px dashed var(--pink)}
 .alias span{grid-column:1;font-size:12px;color:var(--muted)}
 .alias b{grid-column:1;font:800 17px var(--body);user-select:all;overflow-wrap:anywhere}
-.alias .cp{grid-column:2;grid-row:1/3;padding:9px 14px;border-radius:10px;background:var(--pink);color:#fff;font:800 13px var(--body)}
+.alias .cp{grid-column:2;grid-row:1/4;padding:9px 14px;border-radius:10px;background:var(--pink);color:#fff;font:800 13px var(--body)}
 .sumy{display:grid;gap:4px;font-size:14px;color:var(--muted)}
 .sumy div{display:flex;justify-content:space-between}
 .kmb{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:-6px}
@@ -283,7 +283,7 @@ const P = [
 ];
 const CATS = [...new Set(P.filter(p => p.c !== "Promos").map(p => p.c))];
 const Q = {};
-const ENVIO = 2000, MINIMO = 8000, ALIAS = "Joha-burguers93";
+const ENVIO = 2000, MINIMO = 8000, ALIAS = "joha-burguers93", TITULAR = "Johanna Elisabet Castaño";
 const PI = Object.fromEntries(P.map(p => [p.id, p])), pOf = k => PI[k.split("~")[0]];
 const nV = id => Object.keys(Q).filter(k => k.startsWith(id + "~")).reduce((a,k) => a + Q[k], 0);
 const extra = k => k.includes("~") ? k.split("~")[1].split("+").reduce((a,o) => a + (ADDP[o] || 0), 0) : 0;
@@ -397,7 +397,7 @@ function openCart(keep){ if (keep && $("fNom")) sync();
     <div class="kmb"><button type="button" id="kmGps">📍 Usar mi ubicación</button><button type="button" id="kmCalc">🧮 Calcular envío</button></div>
     ${D.envMsg ? `<p class="kmr${D.km != null && D.envio == null ? " out" : ""}">${esc(D.envMsg)}</p>` : `<p class="kmr">El envío se calcula por distancia: ${TARIFAS.map(([h,p],i) => `${i ? "hasta" : "hasta"} ${h} km ${p ? fmt(p) : "gratis"}`).join(" · ")}</p>`}` : ""}
     <div class="fld"><label for="fNota">Aclaración (opcional)</label><input id="fNota" value="${esc(D.nota)}" placeholder="Ej: sin cebolla · empanadas: 3 carne y 3 pollo, fritas"></div>
-    ${D.pago === "Transferencia" ? `<div class="alias"><span>Alias para transferir</span><b>${ALIAS}</b><button class="cp" id="cpAlias" type="button">Copiar</button></div>` : ""}
+    ${D.pago === "Transferencia" ? `<div class="alias"><span>Alias para transferir</span><b>${ALIAS}</b><span>A nombre de ${TITULAR}</span><button class="cp" id="cpAlias" type="button">Copiar</button></div>` : ""}
     <div class="sumy"><div><span>Productos</span><span>${fmt(total())}${unknown() ? " + a confirmar" : ""}</span></div>${D.ent === "envio" ? `<div><span>Envío${D.km != null ? " (" + String(D.km).replace(".", ",") + " km)" : ""}</span><span>${D.km == null ? "a calcular" : D.envio == null ? "fuera de zona" : D.envio ? fmt(D.envio) : "gratis"}</span></div>` : ""}</div>
     <div class="tot"><span>Total${unknown() ? " (+ lo que falta confirmar)" : ""}</span><b>${fmt(total() + envioAct())}</b></div>
     ${total() && total() < MINIMO && !unknown() ? `<p class="warn">El pedido mínimo es de ${fmt(MINIMO)}. Te faltan ${fmt(MINIMO - total())}.</p>` : ""}
