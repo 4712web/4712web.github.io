@@ -81,6 +81,9 @@ input{font:inherit;color:inherit}
 .ctl .m{border:1px solid var(--line)}
 .ctl span{min-width:26px;text-align:center;font:800 15px var(--body)}
 .ctl.has{background:var(--panel-2);padding:2px}
+.aviso{margin:14px 16px 0;padding:12px 14px;border-radius:14px;background:rgba(255,200,0,.12);border:1px solid rgba(255,200,0,.5);color:#ffe28a;font:700 14px var(--body);text-align:center;white-space:pre-line}
+.sinst{font:800 12px var(--body);color:var(--muted);border:1px solid var(--line);border-radius:999px;padding:7px 10px;white-space:nowrap}
+.antes{color:var(--muted);text-decoration:line-through;font-size:.8em;margin-right:6px}
 .subt{padding:16px 14px 8px;border-top:1px solid var(--line);font:400 22px var(--display);text-transform:uppercase;color:var(--pink);letter-spacing:.02em}
 .tops{display:flex;flex-wrap:wrap;gap:8px;margin:4px 0 6px}
 .tops button{padding:11px 14px;border-radius:999px;border:1px solid var(--line);background:var(--panel);font:700 14px var(--body)}
@@ -167,6 +170,7 @@ body{background:transparent} html{background:var(--ink)}
     <div class="chips"><span class="chip" id="open"><i></i><span></span></span><span class="chip">📍 Posadas 1230, Avellaneda</span><span class="chip">🛵 Envío según distancia</span><span class="chip">⏱ 15–45 min</span><span class="chip">🛒 Mínimo $ 8.000</span></div>
   </header>
   <div class="soc"><a class="sb wa" href="https://wa.me/5491127214106" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2a10 10 0 0 0-8.6 15.1L2 22l5-1.3A10 10 0 1 0 12 2zm5.3 14.1c-.2.6-1.3 1.2-1.8 1.2-.5.1-1 .2-3.3-.7-2.8-1.1-4.5-3.9-4.7-4.1-.1-.2-1.1-1.5-1.1-2.9s.7-2 1-2.3c.3-.3.6-.3.8-.3h.6c.2 0 .4 0 .6.5l.9 2.1c.1.2.1.4 0 .5l-.4.6-.4.4c-.1.2-.3.3-.1.6.2.3.8 1.3 1.7 2.1 1.2 1 2.1 1.3 2.4 1.5.3.1.5.1.6-.1l.9-1c.2-.3.4-.2.6-.1l2 .9c.3.2.5.2.5.4.1.1.1.6-.1 1.2z"/></svg>WhatsApp</a><a class="sb ig" href="https://instagram.com/joha_burguers" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r="1.2" fill="currentColor" stroke="none"/></svg>Instagram</a></div>
+  <div class="aviso" id="avisoTop" hidden></div>
   <div class="zonas">Llegamos a <b>Avellaneda centro, Sarandí, Wilde, Bernal, Chingolo, Gerli</b> y más</div>
 
   <section class="promos" aria-label="Promos">
@@ -181,6 +185,7 @@ body{background:transparent} html{background:var(--ink)}
 <div class="cart" id="cart" hidden><div class="in"><button id="cartBtn"><span class="n" id="cN"></span><span>Ver mi pedido</span><span id="cT"></span></button></div></div>
 <div class="sheet" id="sheet" hidden><div class="pn" id="pn" role="dialog" aria-modal="true" aria-label="Tu pedido"></div></div>
 
+<script type="application/json" id="menu-data">{"config": {"aviso": "", "pausado": false}, "productos": [{"id": "p5", "cat": "Promos", "nombre": "5 hamburguesas con cheddar", "desc": "Más papas y una gaseosa · para aprovechar en familia", "precio": 30000, "foto": "https://4712web.github.io/joha/img/promo5.jpg"}, {"id": "pbaj", "cat": "Promos", "nombre": "Promo bajonera", "desc": "2 hamburguesas quíntuples, más papas y bebida · un precio de locos", "precio": 32000, "foto": "https://4712web.github.io/joha/img/pbaj.jpg"}, {"id": "hc1", "cat": "Hamburguesas", "nombre": "Simple cheese", "desc": "Con cheddar · viene con papas y bebida", "precio": 8000, "foto": "https://4712web.github.io/joha/img/hc1.jpg"}, {"id": "hc2", "cat": "Hamburguesas", "nombre": "Doble cheese", "desc": "Con cheddar · viene con papas y bebida", "precio": 10000, "foto": "https://4712web.github.io/joha/img/hc2.jpg"}, {"id": "hc3", "cat": "Hamburguesas", "nombre": "Triple cheese", "desc": "Con cheddar · viene con papas y bebida", "precio": 12500, "foto": "https://4712web.github.io/joha/img/hc3.jpg"}, {"id": "hc4", "cat": "Hamburguesas", "nombre": "Cuádruple cheese", "desc": "Con cheddar · viene con papas y bebida", "precio": 15000, "foto": "https://4712web.github.io/joha/img/hc4.jpg"}, {"id": "hc5", "cat": "Hamburguesas", "nombre": "Quíntuple cheese", "desc": "Con cheddar · viene con papas y bebida", "precio": 17500, "foto": "https://4712web.github.io/joha/img/hc5.jpg"}, {"id": "bking", "cat": "Hamburguesas", "nombre": "Doble King", "desc": "Doble cheese, lechuga, tomate y salsa king · con papas y jugo de regalo", "precio": 14000, "foto": "https://4712web.github.io/joha/img/bking.jpg"}, {"id": "bcuar", "cat": "Hamburguesas", "nombre": "Doble Cuartos", "desc": "Doble cheese, ketchup, mostaza, cebolla y salsa especial · con papas y jugo de regalo", "precio": 14000, "foto": "https://4712web.github.io/joha/img/bcuar.jpg"}, {"id": "bny", "cat": "Hamburguesas", "nombre": "Doble New York", "desc": "Doble cheese, bacon, tomate y salsa especial · con papas y jugo de regalo", "precio": 14000, "foto": "https://4712web.github.io/joha/img/bny.jpg"}, {"id": "he1", "cat": "Hamburguesas", "nombre": "Explosiva simple", "desc": "Bañada en cheddar y bacon · viene con papas y bebida", "precio": 12000, "foto": "https://4712web.github.io/joha/img/he1.jpg"}, {"id": "he2", "cat": "Hamburguesas", "nombre": "Explosiva doble", "desc": "Bañada en cheddar y bacon · viene con papas y bebida", "precio": 15000, "foto": "https://4712web.github.io/joha/img/he2.jpg"}, {"id": "he3", "cat": "Hamburguesas", "nombre": "Explosiva triple", "desc": "Bañada en cheddar y bacon · viene con papas y bebida", "precio": 18000, "foto": "https://4712web.github.io/joha/img/he3.jpg"}, {"id": "he4", "cat": "Hamburguesas", "nombre": "Explosiva cuádruple", "desc": "Bañada en cheddar y bacon · viene con papas y bebida", "precio": 21000, "foto": "https://4712web.github.io/joha/img/he4.jpg"}, {"id": "he5", "cat": "Hamburguesas", "nombre": "Explosiva quíntuple", "desc": "Bañada en cheddar y bacon · viene con papas y bebida", "precio": 24000, "foto": "https://4712web.github.io/joha/img/he5.jpg"}, {"id": "tsim", "cat": "Tortillas de papa", "nombre": "Tortilla simple", "desc": "", "precio": 10000, "foto": ""}, {"id": "trel", "cat": "Tortillas de papa", "nombre": "Tortilla rellena", "desc": "Rellena de jamón y queso", "precio": 15000, "foto": ""}, {"id": "tche", "cat": "Tortillas de papa", "nombre": "Tortilla rellena cheese explosiva", "desc": "Rellena de cheddar", "precio": 18000, "foto": "https://4712web.github.io/joha/img/tchee.jpg"}, {"id": "torti", "cat": "Tortillas de papa", "nombre": "Torti burguer", "desc": "Rellena de carne y cheddar, cobertura de cheddar y bacon", "precio": 20000, "foto": "https://4712web.github.io/joha/img/torti.jpg"}, {"id": "salg", "cat": "Papas y bandejas", "nombre": "Salchipapas grandes", "desc": "", "precio": 12000, "foto": ""}, {"id": "salm", "cat": "Papas y bandejas", "nombre": "Salchipapas medianas", "desc": "", "precio": 6500, "foto": ""}, {"id": "papc", "cat": "Papas y bandejas", "nombre": "Papas · cono", "desc": "Todo viene con aderezos: mayo, cheddar, ketchup, savora o golf", "precio": 3000, "foto": ""}, {"id": "papm", "cat": "Papas y bandejas", "nombre": "Papas · bandeja mediana", "desc": "Con aderezos a elección", "precio": 6000, "foto": ""}, {"id": "papg", "cat": "Papas y bandejas", "nombre": "Papas · bandeja grande", "desc": "Con aderezos a elección", "precio": 10500, "foto": ""}, {"id": "nugc", "cat": "Papas y bandejas", "nombre": "Nuggets · cono", "desc": "Con aderezos a elección", "precio": 6000, "foto": ""}, {"id": "nugm", "cat": "Papas y bandejas", "nombre": "Nuggets · bandeja mediana", "desc": "Con aderezos a elección", "precio": 9000, "foto": ""}, {"id": "nugg", "cat": "Papas y bandejas", "nombre": "Nuggets · bandeja grande", "desc": "Con aderezos a elección", "precio": 17000, "foto": ""}, {"id": "aroc", "cat": "Papas y bandejas", "nombre": "Aros de cebolla · cono", "desc": "Con aderezos a elección", "precio": 6000, "foto": ""}, {"id": "arom", "cat": "Papas y bandejas", "nombre": "Aros de cebolla · bandeja mediana", "desc": "Con aderezos a elección", "precio": 9000, "foto": ""}, {"id": "arog", "cat": "Papas y bandejas", "nombre": "Aros de cebolla · bandeja grande", "desc": "Con aderezos a elección", "precio": 17000, "foto": ""}, {"id": "basc", "cat": "Papas y bandejas", "nombre": "Bastones de muzzarella · cono", "desc": "Con aderezos a elección", "precio": 6000, "foto": ""}, {"id": "basm", "cat": "Papas y bandejas", "nombre": "Bastones de muzzarella · bandeja mediana", "desc": "Con aderezos a elección", "precio": 9000, "foto": ""}, {"id": "basg", "cat": "Papas y bandejas", "nombre": "Bastones de muzzarella · bandeja grande", "desc": "Con aderezos a elección", "precio": 17000, "foto": ""}, {"id": "box", "cat": "Papas y bandejas", "nombre": "Box de campeones", "desc": "Papas, bastones de muzza, aros de cebolla, nuggets, pote de cheddar y bacon", "precio": 18000, "foto": ""}, {"id": "scp", "cat": "Sándwiches XXL", "nombre": "Completo de pollo", "desc": "Lechuga, tomate y huevo · comen 2, pican 3", "precio": 14000, "foto": "https://4712web.github.io/joha/img/spollo.jpg"}, {"id": "ssp", "cat": "Sándwiches XXL", "nombre": "Súper de pollo", "desc": "Lechuga, tomate, huevo, jamón y queso", "precio": 16000, "foto": ""}, {"id": "snp", "cat": "Sándwiches XXL", "nombre": "Napo de pollo", "desc": "Salsa y muzza", "precio": 16000, "foto": ""}, {"id": "scc", "cat": "Sándwiches XXL", "nombre": "Completo de carne", "desc": "Lechuga, tomate y huevo · comen 2, pican 3", "precio": 16000, "foto": "https://4712web.github.io/joha/img/scarne.jpg"}, {"id": "ssc", "cat": "Sándwiches XXL", "nombre": "Súper de carne", "desc": "Lechuga, tomate, huevo, jamón y queso", "precio": 18000, "foto": "https://4712web.github.io/joha/img/sandxxl.jpg"}, {"id": "snc", "cat": "Sándwiches XXL", "nombre": "Napo de carne", "desc": "Salsa y muzza", "precio": 18000, "foto": "https://4712web.github.io/joha/img/snapc.jpg"}, {"id": "chc", "cat": "Sándwiches XXL", "nombre": "Churrasquito de carne", "desc": "Lechuga, tomate y huevo", "precio": 18000, "foto": "https://4712web.github.io/joha/img/schur.jpg"}, {"id": "chb", "cat": "Sándwiches XXL", "nombre": "Churrasquito de bondiola", "desc": "Lechuga, tomate y huevo", "precio": 18000, "foto": "https://4712web.github.io/joha/img/sbond.jpg"}, {"id": "pverd", "cat": "Sándwiches XXL", "nombre": "Pollo al verdeo con fritas", "desc": "", "precio": 12000, "foto": ""}, {"id": "cexp", "cat": "Sándwiches XXL", "nombre": "Caja explosiva cheese", "desc": "Pollo o carne con cheddar, bacon y verdeo, más papas", "precio": 20000, "foto": "https://4712web.github.io/joha/img/caja.jpg"}, {"id": "cnap", "cat": "Sándwiches XXL", "nombre": "Caja napolitana", "desc": "Pollo o carne a la napolitana, más papas", "precio": 20000, "foto": "https://4712web.github.io/joha/img/cnapf.jpg"}, {"id": "pcl", "cat": "Panchos", "nombre": "Súper pancho clásico", "desc": "Elegís 3 toppings sin costo: aderezos, verdeo, bacon o papas", "precio": 2000, "foto": "https://4712web.github.io/joha/img/panch.jpg"}, {"id": "pdo", "cat": "Panchos", "nombre": "Panchos dobles", "desc": "Elegís 3 toppings sin costo: aderezos, verdeo, bacon o papas", "precio": 4500, "foto": "https://4712web.github.io/joha/img/panch.jpg"}, {"id": "pxx", "cat": "Panchos", "nombre": "Súper pancho XXL", "desc": "Elegís 3 toppings sin costo: aderezos, verdeo, bacon o papas", "precio": 4500, "foto": "https://4712web.github.io/joha/img/panch.jpg"}, {"id": "emu", "cat": "Empanadas", "nombre": "Empanada (unidad)", "desc": "Pollo, jamón y queso, carne, carne cheese o choclo · fritas o al horno: aclaralo en el pedido", "precio": 2200, "foto": "https://4712web.github.io/joha/img/empas.jpg"}, {"id": "emm", "cat": "Empanadas", "nombre": "Media docena de empanadas", "desc": "Elegí gustos y si van fritas o al horno en la aclaración", "precio": 12500, "foto": "https://4712web.github.io/joha/img/empas.jpg"}, {"id": "emd", "cat": "Empanadas", "nombre": "Docena de empanadas", "desc": "Elegí gustos y si van fritas o al horno en la aclaración", "precio": 22000, "foto": "https://4712web.github.io/joha/img/empas.jpg"}, {"id": "pb0", "cat": "Promos de bebidas", "nombre": "Chandon + 1 Speed", "desc": "Viene con vaso de hielo", "precio": 23500, "foto": ""}, {"id": "pb1", "cat": "Promos de bebidas", "nombre": "Sky + 3 Speed", "desc": "Viene con vaso de hielo", "precio": 20000, "foto": ""}, {"id": "pb2", "cat": "Promos de bebidas", "nombre": "Smirnoff + 3 Speed", "desc": "Viene con vaso de hielo", "precio": 20000, "foto": ""}, {"id": "pb3", "cat": "Promos de bebidas", "nombre": "Federico + 1 Speed", "desc": "Viene con vaso de hielo", "precio": 8500, "foto": ""}, {"id": "pb4", "cat": "Promos de bebidas", "nombre": "Fernet + 1 Coca", "desc": "Viene con vaso de hielo", "precio": 26000, "foto": ""}, {"id": "pb5", "cat": "Promos de bebidas", "nombre": "Absolut + 3 Speed", "desc": "Viene con vaso de hielo", "precio": 35000, "foto": ""}, {"id": "pb6", "cat": "Promos de bebidas", "nombre": "Red Label + 3 Speed", "desc": "Viene con vaso de hielo", "precio": 45000, "foto": ""}, {"id": "pb7", "cat": "Promos de bebidas", "nombre": "Jack Daniel's de manzana + 3 Speed", "desc": "Viene con vaso de hielo", "precio": 78000, "foto": ""}, {"id": "pb8", "cat": "Promos de bebidas", "nombre": "Gin Gordon's Pink + 1 Sprite", "desc": "Viene con vaso de hielo", "precio": 22000, "foto": ""}, {"id": "g0", "cat": "Gaseosas y bebidas", "nombre": "Coca / Sprite / Fanta 500 ml", "desc": "¡Bien frías!", "precio": 2500, "foto": ""}, {"id": "g1", "cat": "Gaseosas y bebidas", "nombre": "Coca / Sprite / Fanta 2,5 L", "desc": "¡Bien frías!", "precio": 6500, "foto": ""}, {"id": "g2", "cat": "Gaseosas y bebidas", "nombre": "Manaos", "desc": "¡Bien frías!", "precio": 2500, "foto": ""}, {"id": "g3", "cat": "Gaseosas y bebidas", "nombre": "Fresh", "desc": "¡Bien frías!", "precio": 2500, "foto": ""}, {"id": "g4", "cat": "Gaseosas y bebidas", "nombre": "Power", "desc": "¡Bien frías!", "precio": 2200, "foto": ""}, {"id": "g5", "cat": "Gaseosas y bebidas", "nombre": "Fresh chica", "desc": "¡Bien frías!", "precio": 1000, "foto": ""}, {"id": "g6", "cat": "Gaseosas y bebidas", "nombre": "Monster", "desc": "¡Bien frías!", "precio": 3500, "foto": ""}, {"id": "g7", "cat": "Gaseosas y bebidas", "nombre": "Coca en lata", "desc": "¡Bien frías!", "precio": 2200, "foto": ""}, {"id": "g8", "cat": "Gaseosas y bebidas", "nombre": "Sprite en lata", "desc": "¡Bien frías!", "precio": 2000, "foto": ""}, {"id": "g9", "cat": "Gaseosas y bebidas", "nombre": "Agua chica 500 ml", "desc": "¡Bien frías!", "precio": 800, "foto": ""}, {"id": "g10", "cat": "Gaseosas y bebidas", "nombre": "Fernandito", "desc": "¡Bien frías!", "precio": 1500, "foto": ""}, {"id": "g11", "cat": "Gaseosas y bebidas", "nombre": "Cepita 1 L", "desc": "¡Bien frías!", "precio": 2800, "foto": ""}, {"id": "g12", "cat": "Gaseosas y bebidas", "nombre": "Baggio 1 L", "desc": "¡Bien frías!", "precio": 3000, "foto": ""}, {"id": "g13", "cat": "Gaseosas y bebidas", "nombre": "Baggio chico", "desc": "¡Bien frías!", "precio": 1000, "foto": ""}, {"id": "c0", "cat": "Cervezas", "nombre": "Miller (botella)", "desc": "", "precio": 5000, "foto": ""}, {"id": "c1", "cat": "Cervezas", "nombre": "Corona (grande)", "desc": "", "precio": 6000, "foto": ""}, {"id": "c2", "cat": "Cervezas", "nombre": "Corona (porrón)", "desc": "", "precio": 4000, "foto": ""}, {"id": "c3", "cat": "Cervezas", "nombre": "Brahma (botella grande)", "desc": "", "precio": 4500, "foto": ""}, {"id": "c4", "cat": "Cervezas", "nombre": "Brahma (lata)", "desc": "", "precio": 3000, "foto": ""}, {"id": "c5", "cat": "Cervezas", "nombre": "Imperial (lata)", "desc": "", "precio": 3000, "foto": ""}, {"id": "c6", "cat": "Cervezas", "nombre": "Heineken (latón)", "desc": "", "precio": 5500, "foto": ""}, {"id": "c7", "cat": "Cervezas", "nombre": "Schneider", "desc": "", "precio": 4000, "foto": ""}, {"id": "c8", "cat": "Cervezas", "nombre": "Golden (latón 710 ml)", "desc": "", "precio": 4500, "foto": ""}, {"id": "c9", "cat": "Cervezas", "nombre": "Smirnoff (lata)", "desc": "", "precio": 3500, "foto": ""}, {"id": "c10", "cat": "Cervezas", "nombre": "Doctor Lemon (lata)", "desc": "", "precio": 3000, "foto": ""}, {"id": "hel5", "cat": "Postres y helados", "nombre": "Helado 500 g", "desc": "", "precio": 6000, "foto": ""}, {"id": "post", "cat": "Postres y helados", "nombre": "Postres", "desc": "Consultá los del día", "precio": 6000, "foto": ""}, {"id": "ensf", "cat": "Postres y helados", "nombre": "Ensalada de frutas", "desc": "", "precio": 4000, "foto": ""}]}</script>
 <script>
 (() => {
 const $ = id => document.getElementById(id);
@@ -281,7 +286,7 @@ const P = [
   { id:"post", c:"Postres y helados", n:"Postres", d:"Consultá los del día", p:6000, ic:"🍰" },
   { id:"ensf", c:"Postres y helados", n:"Ensalada de frutas", d:"", p:4000, ic:"🍓" }
 ];
-const CATS = [...new Set(P.filter(p => p.c !== "Promos").map(p => p.c))];
+let CATS = [...new Set(P.filter(p => p.c !== "Promos").map(p => p.c))];
 const Q = {};
 const ENVIO = 2000, MINIMO = 8000, ALIAS = "joha-burguers93", TITULAR = "Johanna Elisabet Castaño";
 const PI = Object.fromEntries(P.map(p => [p.id, p])), pOf = k => PI[k.split("~")[0]];
@@ -291,7 +296,8 @@ const unit = k => (pOf(k).p || 0) + extra(k);
 const total = () => Object.entries(Q).reduce((a,[k,n]) => a + n * unit(k), 0);
 const unknown = () => Object.keys(Q).some(k => pOf(k).p == null);
 const units = () => Object.values(Q).reduce((a,b) => a + b, 0);
-const priceHTML = p => p.p == null ? '<span class="ask">Precio a confirmar</span>' : `<span class="price">${fmt(p.p)}</span>`;
+const priceHTML = p => p.p == null ? '<span class="ask">Precio a confirmar</span>' : `<span class="price">${p.antes > p.p ? `<span class="antes">${fmt(p.antes)}</span>` : ""}${fmt(p.p)}</span>`;
+const imgOf = p => p.foto || IMG[p.img] || "";
 const ctl = (k, n) => n ? `<span class="ctl has"><button class="m" data-k="${k}" data-d="-1" aria-label="Quitar uno">−</button><span>${n}</span><button class="p" data-k="${k}" data-d="1" aria-label="Sumar uno">+</button></span>` : `<span class="ctl"><button class="p" data-k="${k}" data-d="1" aria-label="Sumar">+</button></span>`;
 
 const ctlTop = (id, n) => n ? `<span class="ctl has"><button class="m" data-unpick="${id}" aria-label="Quitar uno">−</button><span>${n}</span><button class="p" data-pick="${id}" aria-label="Sumar uno">+</button></span>` : `<span class="ctl"><button class="p" data-pick="${id}" aria-label="Sumar">+</button></span>`;
@@ -317,12 +323,13 @@ function estado(){ const d = new Date(), m = d.getHours()*60 + d.getMinutes();
 const [ab, txt] = estado(); $("open").classList.toggle("off", !ab); $("open").querySelector("span").textContent = txt;
 
 function render(){
-  $("promos").innerHTML = P.filter(p => p.c === "Promos").map(p => { const n = Q[p.id] || 0; return `<article class="pc ${n ? "on" : ""}"><div class="ph"><img src="${IMG[p.img]}" alt="" loading="lazy"><span class="x3">x${p.x}<small>burgers</small></span></div><div class="tx"><b>${p.n}${p.hot ? '<span class="hot">Promo del día</span>' : ""}</b><span class="ds">${p.d}</span><div class="bt">${priceHTML(p)}${ctl(p.id, n)}</div></div></article>`; }).join("");
+  $("promos").innerHTML = P.filter(p => p.c === "Promos").map(p => { const n = Q[p.id] || 0; return `<article class="pc ${n ? "on" : ""}"><div class="ph"><img src="${imgOf(p)}" alt="" loading="lazy"><span class="x3">x${p.x}<small>burgers</small></span></div><div class="tx"><b>${p.n}${p.hot ? '<span class="hot">Promo del día</span>' : ""}</b><span class="ds">${p.d}</span><div class="bt">${priceHTML(p)}${p.sin ? '<span class="sinst">Sin stock</span>' : ctl(p.id, n)}</div></div></article>`; }).join("");
   $("menu").innerHTML = CATS.map(c => `<section class="sec" id="c-${c.replace(/\W/g,"")}"><div class="ttl" style="padding:0 0 12px"><h2>${c.split(" ")[0]}${c.includes(" ") ? ` <span>${c.split(" ").slice(1).join(" ")}</span>` : ""}</h2></div><div class="list">${P.filter(p => p.c === c).map((p, i, a) => { const n = (p.top || p.add) ? nV(p.id) : (Q[p.id] || 0);
-    return `${p.sub && p.sub !== (a[i-1] || {}).sub ? `<div class="subt">${p.sub}</div>` : ""}<div class="row ${n ? "on" : ""}">${p.img ? `<img class="th" src="${IMG[p.img]}" alt="" loading="lazy">` : `<span class="th ic">${p.ic}</span>`}<div class="nm"><b>${p.n}${p.hot ? `<span class="hot">${p.c === "Burgers" ? "Nueva" : "Top"}</span>` : ""}</b>${p.d ? `<small>${p.d}</small>` : ""}${priceHTML(p)}</div>${(p.top || p.add) ? ctlTop(p.id, n) : ctl(p.id, n)}</div>`; }).join("")}</div></section>`).join("");
+    return `${p.sub && p.sub !== (a[i-1] || {}).sub ? `<div class="subt">${p.sub}</div>` : ""}<div class="row ${n ? "on" : ""}">${imgOf(p) ? `<img class="th" src="${imgOf(p)}" alt="" loading="lazy">` : `<span class="th ic">${p.ic}</span>`}<div class="nm"><b>${p.n}${p.hot ? `<span class="hot">${p.c === "Burgers" ? "Nueva" : "Top"}</span>` : ""}</b>${p.d ? `<small>${p.d}</small>` : ""}${priceHTML(p)}</div>${p.sin ? '<span class="sinst">Sin stock</span>' : (p.top || p.add) ? ctlTop(p.id, n) : ctl(p.id, n)}</div>`; }).join("")}</div></section>`).join("");
 }
 function bar(){ const n = units(), b = $("cartBtn"); $("cart").hidden = !n; $("cN").textContent = n; $("cT").textContent = fmt(total()) + (unknown() ? " +" : ""); b.classList.remove("bump"); void b.offsetWidth; b.classList.add("bump"); }
-$("cats").innerHTML = CATS.map((c,i) => `<button class="cat" data-cat="${c}" aria-current="${i === 0}">${c}</button>`).join("");
+function navCats(){ CATS = [...new Set(P.filter(p => p.c !== "Promos").map(p => p.c))]; $("cats").innerHTML = CATS.map((c,i) => `<button class="cat" data-cat="${esc(c)}" aria-current="${i === 0}">${esc(c)}</button>`).join(""); }
+navCats();
 document.addEventListener("click", e => {
   const k = e.target.closest("[data-k]");
   if (k && !e.target.closest("#pn")){ const id = k.dataset.k; Q[id] = Math.max(0, (Q[id] || 0) + +k.dataset.d); if (!Q[id]) delete Q[id]; const sc = $("promos").scrollLeft, y = scrollY; render(); $("promos").scrollLeft = sc; scrollTo(0, y); bar(); if (navigator.vibrate) navigator.vibrate(8); return; }
@@ -336,7 +343,7 @@ let tq = 0; addEventListener("scroll", () => { if (tq) return; tq = requestAnima
   document.querySelectorAll(".cat").forEach(b => { const on = b.dataset.cat === cur; if (on && b.getAttribute("aria-current") !== "true"){ const p = b.parentElement; p.scrollTo({ left: b.offsetLeft - p.clientWidth/2 + b.offsetWidth/2, behavior:"smooth" }); } b.setAttribute("aria-current", on); }); }); }, { passive:true });
 
 /* pedido */
-const D = { ent:"envio", pago:"Efectivo", nom:"", dir:"", nota:"", km:null, envio:null, geo:null, envMsg:"" };
+const D = { ent:"envio", pago:"Efectivo", nom:"", tel:"", dir:"", nota:"", km:null, envio:null, geo:null, envMsg:"" };
 /* ===== envío por kilómetro =====
    TARIFAS: [hasta X km, precio]. Lo que pase del último tramo queda fuera de zona.
    TIENDA: coordenadas del local (si es null se buscan solas por la dirección). */
@@ -393,6 +400,7 @@ function openCart(keep){ if (keep && $("fNom")) sync();
     <div class="grp"><b>Entrega</b><div class="seg"><button data-ent="envio" aria-pressed="${D.ent === "envio"}">🛵 Delivery</button><button data-ent="retiro" aria-pressed="${D.ent === "retiro"}">🏠 Retiro</button></div></div>
     <div class="grp"><b>Pago</b><div class="seg"><button data-pago="Efectivo" aria-pressed="${D.pago === "Efectivo"}">💵 Efectivo</button><button data-pago="Transferencia" aria-pressed="${D.pago === "Transferencia"}">🏦 Transferencia</button></div></div>
     <div class="fld"><label for="fNom">Nombre</label><input id="fNom" autocomplete="name" value="${esc(D.nom)}" placeholder="Tu nombre"></div>
+    <div class="fld"><label for="fTel">Tu WhatsApp</label><input id="fTel" type="tel" inputmode="tel" autocomplete="tel" value="${esc(D.tel)}" placeholder="Ej: 11 2345-6789"></div>
     ${D.ent === "envio" ? `<div class="fld"><label for="fDir">Dirección y barrio</label><input id="fDir" autocomplete="street-address" value="${esc(D.dir)}" placeholder="Calle, número y barrio"></div>
     <div class="kmb"><button type="button" id="kmGps">📍 Usar mi ubicación</button><button type="button" id="kmCalc">🧮 Calcular envío</button></div>
     ${D.envMsg ? `<p class="kmr${D.km != null && D.envio == null ? " out" : ""}">${esc(D.envMsg)}</p>` : `<p class="kmr">El envío se calcula por distancia: ${TARIFAS.map(([h,p],i) => `${i ? "hasta" : "hasta"} ${h} km ${p ? fmt(p) : "gratis"}`).join(" · ")}</p>`}` : ""}
@@ -401,10 +409,10 @@ function openCart(keep){ if (keep && $("fNom")) sync();
     <div class="sumy"><div><span>Productos</span><span>${fmt(total())}${unknown() ? " + a confirmar" : ""}</span></div>${D.ent === "envio" ? `<div><span>Envío${D.km != null ? " (" + String(D.km).replace(".", ",") + " km)" : ""}</span><span>${D.km == null ? "a calcular" : D.envio == null ? "fuera de zona" : D.envio ? fmt(D.envio) : "gratis"}</span></div>` : ""}</div>
     <div class="tot"><span>Total${unknown() ? " (+ lo que falta confirmar)" : ""}</span><b>${fmt(total() + envioAct())}</b></div>
     ${total() && total() < MINIMO && !unknown() ? `<p class="warn">El pedido mínimo es de ${fmt(MINIMO)}. Te faltan ${fmt(MINIMO - total())}.</p>` : ""}
-    <button class="btn" id="send">${WAIC}Enviar pedido por WhatsApp</button><p class="small">Se abre WhatsApp con tu pedido escrito. Joha te confirma el pedido · demora 15 a 45 min.</p></div>`;
+    ${PAUSA ? `<p class="warn">Por ahora no estamos tomando pedidos por la web. Escribinos por WhatsApp.</p>` : ""}<button class="btn" id="send" ${PAUSA ? "disabled" : ""}>${WAIC}Enviar pedido por WhatsApp</button><p class="small">Se abre WhatsApp con tu pedido escrito. Joha te confirma el pedido · demora 15 a 45 min.</p></div>`;
   $("sheet").hidden = false; document.body.style.overflow = "hidden";
 }
-const sync = () => { D.nom = $("fNom").value; if ($("fDir")){ if ($("fDir").value.trim() !== D.dir.trim() && !D.geoGps){ D.km = null; D.envio = null; D.geo = null; D.envMsg = ""; } D.dir = $("fDir").value; } D.nota = $("fNota").value; };
+const sync = () => { D.nom = $("fNom").value; D.tel = $("fTel").value; if ($("fDir")){ if ($("fDir").value.trim() !== D.dir.trim() && !D.geoGps){ D.km = null; D.envio = null; D.geo = null; D.envMsg = ""; } D.dir = $("fDir").value; } D.nota = $("fNota").value; };
 $("pn").addEventListener("click", e => { const t = e.target.closest("button"); if (!t) return;
   if (t.dataset.close !== undefined) return close();
   if (t.dataset.top){ const v = t.dataset.top; SEL = SEL.includes(v) ? SEL.filter(x => x !== v) : (PI[PICK].add || SEL.length < MAXTOP) ? [...SEL, v] : SEL; return drawPick(); }
@@ -417,20 +425,130 @@ $("pn").addEventListener("click", e => { const t = e.target.closest("button"); i
   if (t.id === "cpAlias"){ const done = () => { t.textContent = "¡Copiado!"; setTimeout(() => t.textContent = "Copiar", 1500); }; try { navigator.clipboard.writeText(ALIAS).then(done, () => {}); } catch {} return; }
   if (t.id === "send"){ sync();
     if (total() && total() < MINIMO && !unknown()) return;
+    if (PAUSA) return;
     if (!D.nom.trim()){ $("fNom").classList.add("err"); $("fNom").focus(); return; }
+    if (D.tel.replace(/\D/g, "").length < 8){ $("fTel").classList.add("err"); $("fTel").focus(); return; }
     if (D.ent === "envio" && !D.dir.trim()){ $("fDir").classList.add("err"); $("fDir").focus(); return; }
     if (D.ent === "envio" && D.km == null && !D.envMsg){ calcDir(); return; }
     if (D.ent === "envio" && D.km != null && D.envio == null){ return; }
-    const nro = String(Date.now()).slice(-4), envio = envioAct(), L = "------------------------------";
+    const nro = "J" + String(Date.now()).slice(-4), envio = envioAct(), L = "------------------------------";
     const envTxt = D.ent !== "envio" ? "" : D.km == null ? "\nEnvío: a confirmar" : `\nEnvío (${String(D.km).replace(".", ",")} km): ${envio ? fmt(envio) : "GRATIS"}`;
     const mapa = D.ent === "envio" && D.geo ? `\n📍 https://maps.google.com/?q=${D.geo.lat.toFixed(6)},${D.geo.lng.toFixed(6)}` : "";
-    const msg = `🧾 *PEDIDO WEB #${nro}*\n${L}\n👤 ${D.nom}\n${D.ent === "envio" ? "🛵 DELIVERY: " + D.dir + mapa : "🏠 RETIRA en Posadas 1230"}\n${L}\n${items().map(x => `${x.t}  ${x.v == null ? "(precio a confirmar)" : fmt(x.v)}`).join("\n")}\n${L}\nProductos: ${fmt(total())}${unknown() ? " + a confirmar" : ""}${envTxt}\n*TOTAL: ${fmt(total() + envio)}*\n💳 ${D.pago}${D.pago === "Transferencia" ? " (alias " + ALIAS + ")" : ""}${D.nota ? "\n📝 " + D.nota : ""}\n${L}\nHecho desde la web de Lo de Joha`;
-    $("pn").innerHTML = `<div class="pb" style="text-align:center"><div class="ok"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></div><h3 style="margin:0;font:400 32px var(--display);text-transform:uppercase">¡Listo, ${esc(D.nom.trim().split(" ")[0])}!</h3><p style="margin:0;color:var(--muted)">Tocá el botón y enviá el mensaje que se arma solo.</p><a class="btn" href="https://wa.me/${WA}?text=${encodeURIComponent(msg)}" target="_blank" rel="noopener">${WAIC}Abrir WhatsApp</a><button class="btn alt" data-close>Volver a la carta</button></div>`; }
+    const msg = `🧾 *PEDIDO WEB #${nro}*\n${L}\n👤 ${D.nom} · 📱 ${D.tel}\n${D.ent === "envio" ? "🛵 DELIVERY: " + D.dir + mapa : "🏠 RETIRA en Posadas 1230"}\n${L}\n${items().map(x => `${x.t}  ${x.v == null ? "(precio a confirmar)" : fmt(x.v)}`).join("\n")}\n${L}\nProductos: ${fmt(total())}${unknown() ? " + a confirmar" : ""}${envTxt}\n*TOTAL: ${fmt(total() + envio)}*\n💳 ${D.pago}${D.pago === "Transferencia" ? " (alias " + ALIAS + ")" : ""}${D.nota ? "\n📝 " + D.nota : ""}\n${L}\nHecho desde la web de Lo de Joha`;
+    $("pn").innerHTML = `<div class="pb" style="text-align:center"><div class="ok"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></div><h3 style="margin:0;font:400 32px var(--display);text-transform:uppercase">¡Listo, ${esc(D.nom.trim().split(" ")[0])}!</h3><p style="margin:0;color:var(--muted)">Tocá el botón y enviá el mensaje que se arma solo.</p><a class="btn" id="goWA" href="https://wa.me/${WA}?text=${encodeURIComponent(msg)}" target="_blank" rel="noopener">${WAIC}Abrir WhatsApp</a><button class="btn alt" data-close>Volver a la carta</button></div>`;
+    const pm = [`Pedido #${nro}`, ...items().map(x => `${x.t.replace(" × ", " x ")} — ${x.v == null ? "$ 0" : fmt(x.v)}`), `Nombre: ${D.nom.trim()}`, `WhatsApp: ${D.tel.trim()}`,
+      `Entrega: ${D.ent === "envio" ? "Delivery" + (D.km != null ? " (" + String(D.km).replace(".", ",") + " km)" : "") : "Retiro en el local"}`,
+      ...(D.ent === "envio" ? [`Dirección: ${D.dir.trim()}`] : []), ...(mapa ? [`Mapa: ${mapa.trim().replace("📍 ", "")}`] : []),
+      `Pago: ${D.pago}`, ...(D.ent === "envio" ? [`Envío: ${D.km == null ? "a confirmar" : envio ? fmt(envio) : "gratis"}`] : []), ...(D.nota.trim() ? [`Nota: ${D.nota.trim()}`] : []), `Total: ${fmt(total() + envio)}`].join("\n");
+    let reg = false; $("goWA").addEventListener("click", () => { if (!reg){ reg = true; registrarPedido(pm); } }); }
 });
 $("pn").addEventListener("input", e => e.target.classList.remove("err"));
 $("cartBtn").onclick = openCart;
 $("sheet").addEventListener("click", e => { if (e.target.id === "sheet") close(); });
+
+/* >>> 4712 BACKEND (Joha) >>> */
+let PAUSA = false;
+const FORM_URL = "https://docs.google.com/forms/d/e/1FAIpQLSeC_Gk4aiUURCfHLs-Fbfj10Dub1nIS2Ii70OcaRJrnlfIwFw/formResponse";
+const SEAL_PUB = "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAsZpNWWkdC8iCmfxab8P+HeOutp0z3gwnZ5XhhOMdNAEZ7blyrdEpHx7VfumaqYMS+lAS1MSF0gTYZ+hSE3cg5XyEKqT6M+NhZChtdHnD1DJljnCMLIej67/icZTOyfNYxbXhoBZLamcP3LDehfPl88EtVDYEygrTz29kc+2faSrio45/BZdos8d3oHzSIQSUPnyCkBE37afE6skmuDrhSJs/OZssh/JLkjrVnm7/MeP7vzqXYP37pwUdahKNV3Cx8myged3PttBXJQfQ9H7qngmjYbYzds0YHlJs4FoTK4aDJrnxX3Bfxhbist6jOnme8yT9MrnmI869nkYbqeDvVQIDAQAB", PUB_KEY = "-9nRQqqkq4bHMngmnIg_1D6OSmH905r3p3VLlcsGVSw", KEYC = "joha", SHEET = { id: "1W7bLBLQev6xfisgqklAOX-M-bwlv_es_RpVmePuaLCY", gid: "245098590" };
+const u64s = b => btoa(String.fromCharCode(...new Uint8Array(b))).replace(/\+/g,"-").replace(/\//g,"_").replace(/=+$/,"");
+const b64u = s => Uint8Array.from(atob(s.replace(/-/g,"+").replace(/_/g,"/").padEnd(Math.ceil(s.length/4)*4,"=")), c => c.charCodeAt(0));
+const EN_CLAUDE = !!window.claude?.use || /claude\.ai|claudeusercontent/.test(location.hostname);
+let sealKey = null;
+try { if (!EN_CLAUDE) sealKey = crypto.subtle.importKey("spki", b64u(SEAL_PUB), {name:"RSA-OAEP", hash:"SHA-256"}, false, ["encrypt"]); } catch {}
+async function sellar(txt){
+  const pub = await sealKey, k = await crypto.subtle.generateKey({name:"AES-GCM", length:256}, true, ["encrypt"]);
+  const iv = crypto.getRandomValues(new Uint8Array(12));
+  const ct = await crypto.subtle.encrypt({name:"AES-GCM", iv}, k, new TextEncoder().encode(txt));
+  const ek = await crypto.subtle.encrypt({name:"RSA-OAEP"}, pub, await crypto.subtle.exportKey("raw", k));
+  return u64s(ek) + "." + u64s(iv) + "." + u64s(ct);
+}
+function enviarForm(texto){
+  const d = new URLSearchParams(); d.append("entry.2021034120", texto);
+  const ok = navigator.sendBeacon && navigator.sendBeacon(FORM_URL, d);
+  if (!ok) fetch(FORM_URL, {method:"POST", mode:"no-cors", body:d, keepalive:true}).catch(()=>{});
+}
+function registrarPedido(msg){ if (EN_CLAUDE || !sealKey) return; sellar(msg).then(s => enviarForm(`PEDIDO[${KEYC}] ${s}`)).catch(() => {}); }
+/* cambios firmados desde el panel */
+const BASE = JSON.parse(document.getElementById("menu-data").textContent).productos;
+const BI = Object.fromEntries(BASE.map(b => [b.id, b]));
+async function verifyCambio(txt){
+  const m = String(txt).match(/^CAMBIO\[joha\] (\{[\s\S]*\}) FIRMA ([A-Za-z0-9_-]+)\s*$/); if (!m) return null;
+  try { const k = await crypto.subtle.importKey("raw", b64u(PUB_KEY), {name:"Ed25519"}, false, ["verify"]);
+    return (await crypto.subtle.verify({name:"Ed25519"}, k, b64u(m[2]), new TextEncoder().encode(m[1]))) ? JSON.parse(m[1]) : null; } catch { return null; }
+}
+function applyCambio(s){
+  for (const x of s.p || []){
+    const p = PI[x.id], b = BI[x.id]; if (!p || !b) continue;
+    if (x.bp === b.precio && x.precio > 0) p.p = x.precio;
+    if (x.ba === (b.antes || 0)) p.antes = x.antes || 0;
+    if (x.bs === !!b.sinStock) p.sin = !!x.sin;
+    if (typeof x.nm === "string" && x.nm.trim()) p.n = x.nm.trim();
+    if (typeof x.ds === "string") p.d = x.ds;
+    if (typeof x.ct === "string" && x.ct.trim() && x.ct.trim() !== p.c){ p.c = x.ct.trim(); delete p.sub; }
+    if (x.oc) p._oc = true;
+  }
+  for (const n of s.n || []){
+    if (!n || !n.id || PI[n.id] || n.oc || !n.nm || !(n.precio > 0)) continue;
+    const q = { id:n.id, c:(n.ct || "Otros").trim(), n:n.nm.trim(), d:n.ds || "", p:n.precio, ic:"🍽️" };
+    if (n.antes) q.antes = n.antes; if (n.sin) q.sin = true;
+    let at = -1; P.forEach((p,i) => { if (p.c === q.c) at = i; });
+    if (at < 0) P.push(q); else P.splice(at + 1, 0, q); PI[q.id] = q;
+  }
+  for (let i = P.length - 1; i >= 0; i--) if (P[i]._oc){ delete PI[P[i].id]; P.splice(i, 1); }
+  if (s.c){ const a = $("avisoTop"), t = (s.c.aviso || "").trim(); a.hidden = !t; a.textContent = t; PAUSA = !!s.c.pausado; }
+}
+const FOTO_PRE = "FOTO[joha] ";
+async function fotoHash(d){ return u64s(await crypto.subtle.digest("SHA-256", new TextEncoder().encode(d))).slice(0,16); }
+function gvizRows(tq){
+  return new Promise(res => {
+    const cb = "__gf" + Math.random().toString(36).slice(2), sc = document.createElement("script");
+    const done = v => { delete window[cb]; sc.remove(); res(v); };
+    window[cb] = r => done(r && r.status !== "error" ? (r.table?.rows || []) : []);
+    sc.onerror = () => done([]);
+    sc.src = `https://docs.google.com/spreadsheets/d/${SHEET.id}/gviz/tq?gid=${SHEET.gid}&tq=${encodeURIComponent(tq)}&tqx=out:json;responseHandler:${cb}&_=${Date.now()}`;
+    document.head.appendChild(sc);
+  });
+}
+async function loadFotos(hs){
+  hs = [...new Set(hs)].filter(h => /^[A-Za-z0-9_-]{16}$/.test(h)); const out = {}, lotes = [];
+  for (let i = 0; i < hs.length; i += 4) lotes.push(hs.slice(i, i + 4));
+  await Promise.all(lotes.map(async L => {
+    const rows = await gvizRows("select B where " + L.map(h => `B starts with '${FOTO_PRE}${h} '`).join(" or "));
+    const parts = {};
+    for (const r of rows) for (const c of r.c || []){
+      if (!c || typeof c.v !== "string" || !c.v.startsWith(FOTO_PRE)) continue;
+      const t = c.v.slice(FOTO_PRE.length), a = t.indexOf(" "), h = t.slice(0, a); if (!L.includes(h)) continue;
+      const rest = t.slice(a + 1), m = rest.match(/^(\d+)\/(\d+) ([\s\S]*)$/), Pp = parts[h] = parts[h] || { n:0, c:{} };
+      if (m){ Pp.n = +m[2]; Pp.c[+m[1]] = m[3].trim(); } else { Pp.n = 1; Pp.c[1] = rest.trim(); }
+    }
+    for (const h in parts){ const Pp = parts[h]; let d = "";
+      for (let i = 1; i <= Pp.n; i++){ if (Pp.c[i] == null){ d = null; break; } d += Pp.c[i]; }
+      if (d && /^data:image\/(jpeg|png|webp);base64,[A-Za-z0-9+/=]+$/.test(d)){ try { if (await fotoHash(d) === h) out[h] = d; } catch {} } }
+  }));
+  return out;
+}
+async function applyFotos(s){
+  const lista = [...(s.p || []), ...(s.n || [])].filter(x => Array.isArray(x.f)); if (!lista.length) return;
+  const F = await loadFotos(lista.flatMap(x => x.f.filter(r => !r.startsWith("b:"))));
+  for (const x of lista){ const p = PI[x.id]; if (!p) continue; const r = x.f[0];
+    if (!r){ p.foto = ""; if (BI[x.id]) delete p.img; continue; }
+    if (r.startsWith("b:")) { p.foto = ""; continue; }
+    if (F[r]) p.foto = F[r]; }
+  refrescar();
+}
+function limpiarCarrito(){ for (const k in Q){ const p = pOf(k); if (!p || p.sin) delete Q[k]; } }
+function refrescar(){ limpiarCarrito(); navCats(); const sc = $("promos").scrollLeft, y = scrollY; render(); $("promos").scrollLeft = sc; scrollTo(0, y); bar(); if (!$("cart").hidden && !units()) $("cart").hidden = true; }
+function loadCambios(){
+  if (EN_CLAUDE) return;
+  gvizRows("select B where B starts with 'CAMBIO[joha]' order by A desc limit 10").then(async rows => {
+    let best = null;
+    for (const r of rows) for (const c of r.c || []){ if (!c || typeof c.v !== "string") continue; const v = await verifyCambio(c.v); if (v && (!best || v.t > best.t)) best = v; }
+    if (best){ applyCambio(best); refrescar(); applyFotos(best).catch(() => {}); }
+  });
+}
+/* <<< 4712 BACKEND <<< */
 render();
+loadCambios();
 document.querySelector(".flogo").src = document.querySelector(".logo").src;
 })();
 </script>
