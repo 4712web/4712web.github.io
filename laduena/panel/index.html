@@ -714,7 +714,7 @@ async function prepararFoto(file){
     const img = await new Promise((ok, ko) => { const i = new Image(); i.decoding = "async"; i.onload = () => ok(i); i.onerror = ko; i.src = url; });
     if (!LIENZO) LIENZO = document.createElement("canvas");
     const c = LIENZO, w = img.naturalWidth, h = img.naturalHeight, m = Math.min(w, h);
-    const pasos = [[480,.82],[480,.72],[480,.62],[400,.7],[400,.58],[320,.65],[260,.6]];
+    const pasos = [[720,.82],[720,.74],[640,.74],[560,.74],[480,.72],[400,.68],[320,.65]];
     let out = "";
     for (const [S, q] of pasos){
       if (c.width !== S){ c.width = S; c.height = S; }
@@ -722,10 +722,10 @@ async function prepararFoto(file){
       g.fillStyle = "#fff"; g.fillRect(0, 0, S, S);
       g.drawImage(img, (w - m) / 2, (h - m) / 2, m, m, 0, 0, S, S);
       out = c.toDataURL("image/jpeg", q);
-      if (out.length <= 30000) break;
+      if (out.length <= 80000) break;
     }
     img.src = "";
-    return out.length <= 40000 && out.startsWith("data:image/jpeg") ? out : null;
+    return out.length <= 100000 && out.startsWith("data:image/jpeg") ? out : null;
   } catch { return null; } finally { URL.revokeObjectURL(url); }
 }
 function pSt(t, cls=""){ const el = $("#pSt"); el.textContent = t; el.className = "pst " + cls; }
