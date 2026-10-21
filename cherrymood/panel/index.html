@@ -186,6 +186,17 @@ details pre{white-space:pre-wrap;font-family:ui-monospace,Menlo,monospace;font-s
 .swrow{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-top:12px;padding:12px;background:var(--surface);border:1px solid var(--line);border-radius:12px;font-size:.9rem;font-weight:600}
 .toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:var(--fg);color:var(--bg);font-weight:700;padding:10px 16px;border-radius:999px;z-index:30;font-size:.88rem}
 @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+.prt{width:100%;margin-top:8px;padding:11px 6px;border-radius:10px;background:var(--surface);border:1.5px solid var(--line);color:var(--fg);font-weight:800;font-size:.85rem}
+#ticket{display:none}
+@media print{
+  @page{size:58mm auto;margin:0}
+  html,body{background:#fff!important;margin:0!important;padding:0!important}
+  body>*:not(#ticket){display:none!important}
+  #ticket{display:block!important;width:48mm;margin:0 auto;padding:2mm 0 6mm;color:#000} #ticket pre{margin:0;font:bold 11px/1.25 "Courier New",monospace;white-space:pre;color:#000}
+  #ticket .c{text-align:center} #ticket .big{font-size:16px;font-weight:700} #ticket hr{border:0;border-top:1px dashed #000;margin:5px 0}
+  #ticket .it{display:flex;justify-content:space-between;gap:6px;font-weight:700;font-size:13px} #ticket .it span:last-child{white-space:nowrap} #ticket .op{padding-left:10px;font-size:12px;font-weight:400}
+  #ticket .row{display:flex;justify-content:space-between} #ticket .tot{font-size:15px;font-weight:700}
+}
 </style>
 </head>
 <body>
@@ -341,6 +352,9 @@ function parseMsg(txt){
     else if ((m = l.match(/^Entrega:\s*(.*)/i))) o.entrega = m[1];
     else if ((m = l.match(/^Pago:\s*(.*)/i))) o.pago = m[1];
     else if ((m = l.match(/^(?:WhatsApp|Tel[eé]fono|Tel|Celular|N[uú]mero)[^:]*:\s*(.*)/i))) o.tel = m[1];
+    else if ((m = l.match(/^Direcci[oó]n:\s*(.*)/i))) o.dir = m[1];
+    else if ((m = l.match(/^Nota:\s*(.*)/i))) o.nota = m[1];
+    else if ((m = l.match(/^Env[ií]o:\s*(.*)/i))) o.envio = m[1];
   }
   return o;
 }
@@ -361,7 +375,7 @@ function toOrders(table){
     });
     if (!msg) continue;
     const p = parseMsg(msg);
-    out.push({ id: p.num || String(+fecha), fecha, msg, cliente: cliente || p.nombre || "Sin nombre", total: total || p.total, items: p.items, entrega: p.entrega, pago: p.pago, tel: p.tel });
+    out.push({ id: p.num || String(+fecha), fecha, msg, cliente: cliente || p.nombre || "Sin nombre", total: total || p.total, items: p.items, entrega: p.entrega, pago: p.pago, tel: p.tel, dir: p.dir, nota: p.nota, envio: p.envio });
   }
   return out.sort((a,b)=>b.fecha-a.fecha);
 }
@@ -564,6 +578,7 @@ function drawList(R){
       ${o.items.length?`<ul>${o.items.map(it=>`<li><span>${it.q} × ${esc(it.nombre)}${it.op?` <span style="color:var(--muted)">(${esc(it.op)})</span>`:""}</span><span class="num">${fmt(it.sub)}</span></li>`).join("")}</ul>`:""}
       <div class="tags">${o.entrega?`<span>🚚 ${esc(o.entrega)}</span>`:""}${o.pago?`<span>💳 ${esc(o.pago)}</span>`:""}</div>
       ${waNum(o.tel) ? `<div class="wab"><button data-wa="ok" data-id="${esc(o.id)}">👍 Confirmar pedido</button><button data-wa="${/retir/i.test(o.entrega) ? "listo" : "salio"}" data-id="${esc(o.id)}">${/retir/i.test(o.entrega) ? "🏠 Avisar: está listo" : "🛵 Avisar: ya salió"}</button></div>` : ""}
+      ${CFG.comanda ? `<button class="prt" data-print="${esc(o.id)}">🖨️ Imprimir comanda</button>` : ""}
       <div class="st">${STATES.map(([s,ic,n])=>`<button data-id="${esc(o.id)}" data-s="${s}" aria-pressed="${st===s}">${ic} ${n}</button>`).join("")}</div>
       ${o.msg && o.msg!=="(pedido de ejemplo)"?`<details><summary>Ver mensaje completo</summary><pre>${esc(o.msg)}</pre></details>`:""}</article>`;
   }).join("") : `<div class="empty">No hay pedidos ${filt!=="todos"?"con ese estado ":""}en este período.</div>`;
@@ -578,7 +593,42 @@ function waAviso(o, tipo){
     listo: `¡Hola ${nom}! ✅ Tu pedido${num} de ${CFG.nombre} ya está listo para retirar. ¡Te esperamos!` };
   return "https://wa.me/" + waNum(o.tel) + "?text=" + encodeURIComponent(T[tipo]);
 }
+/* comanda en texto de ancho fijo (32 columnas = papel de 58 mm), así sale igual con cualquier driver */
+const COLS = CFG.cols || 32;
+const asc = s => String(s ?? "").normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/·/g, "-").replace(/[«»]/g, "").replace(/[¡¿]/g, "").replace(/[^\x20-\x7E]/g, "").trim();
+function partir(s, w = COLS, sang = ""){ const out = []; let l = "";
+  for (const p of asc(s).split(/\s+/).filter(Boolean)){ const pp = p.length > w ? p.match(new RegExp(`.{1,${w - sang.length}}`, "g")) : [p];
+    for (const x of pp){ if (!l) l = (out.length ? sang : "") + x; else if ((l + " " + x).length <= w) l += " " + x; else { out.push(l); l = sang + x; } } }
+  if (l) out.push(l); return out; }
+const centro = s => { s = asc(s).slice(0, COLS); return " ".repeat(Math.max(0, Math.floor((COLS - s.length) / 2))) + s; };
+function dosCol(izq, der){ der = asc(der); const L = partir(izq, COLS - der.length - 1, "  "); const last = L.pop() || "";
+  return [...L, last + " ".repeat(Math.max(1, COLS - last.length - der.length)) + der]; }
+function comanda(o){
+  const f = o.fecha.toLocaleString("es-AR",{timeZone:TZ,day:"2-digit",month:"2-digit",hour:"2-digit",minute:"2-digit",hourCycle:"h23"});
+  const R = "-".repeat(COLS), L = [];
+  L.push(centro(CFG.nombre.toUpperCase()), centro((o.id && !/^\d+$/.test(o.id) ? "Pedido #" + o.id + "  " : "") + f), R);
+  L.push(...partir(o.cliente)); if (o.tel) L.push(...partir("Tel: " + o.tel));
+  L.push(...partir((/retir/i.test(o.entrega || "") ? "RETIRA EN EL LOCAL" : "DELIVERY") + (/km/.test(o.entrega || "") ? " " + (o.entrega.match(/\(.*\)/) || [""])[0] : "")));
+  if (o.dir) L.push(...partir(o.dir)); L.push(R);
+  for (const it of o.items){ const [n, ...ad] = it.nombre.split(" + "), sep = ad.length && !/^\d/.test(ad[0]);
+    L.push(...dosCol(it.q + " x " + (sep ? n : it.nombre), fmt(it.sub)));
+    if (sep) for (const a of ad) L.push(...partir("+ " + a, COLS - 2, "  ").map(x => "  " + x));
+    if (it.op) L.push(...partir("> " + it.op, COLS - 2, "  ").map(x => "  " + x)); }
+  L.push(R);
+  if (o.nota){ L.push(...partir("NOTA: " + o.nota)); L.push(R); }
+  if (o.envio) L.push(...dosCol("Envio", o.envio));
+  L.push(...dosCol("TOTAL", fmt(o.total)), ...partir("Pago: " + (o.pago || "")), R, centro("Gracias!"), ...Array(CFG.feed || 7).fill(""), ".");  /* avance final: lo que queda entre el cabezal y el borde de corte */
+  let t = document.getElementById("ticket"); if (!t){ t = document.createElement("div"); t.id = "ticket"; document.body.appendChild(t); }
+  t.innerHTML = `<pre>${esc(L.join("\n"))}</pre>`;
+  /* driver "Generic / Text Only": ubica cada letra en una grilla de 10 por pulgada y 6 renglones por pulgada,
+     así que la letra tiene que medir justo 0,1" (Courier 16px) y arrancar en el borde izquierdo */
+  if (CFG.textOnly && !document.getElementById("txtOnly")){ const st = document.createElement("style"); st.id = "txtOnly";
+    st.textContent = '@media print{@page{size:auto;margin:0}#ticket{width:auto!important;margin:0!important;padding:0!important}#ticket pre{font:400 16px/16px "Courier New",Courier,monospace!important;letter-spacing:0!important}}';
+    document.head.appendChild(st); }
+  setTimeout(() => window.print(), 50);
+}
 document.addEventListener("click", e => {
+  const pr = e.target.closest("[data-print]"); if (pr){ const o = orders.find(x => x.id === pr.dataset.print); if (o) comanda(o); return; }
   const w = e.target.closest("[data-wa]"); if (w){ const o = orders.find(x => x.id === w.dataset.id); if (!o) return;
     window.open(waAviso(o, w.dataset.wa), "_blank");
     if (w.dataset.wa !== "ok" && stOf(o) === "pendiente"){ states[o.id] = "enviado"; ls.set(K_ST, states); render(); } return; }
