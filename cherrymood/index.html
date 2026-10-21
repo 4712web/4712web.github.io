@@ -952,11 +952,13 @@ function applyCambio(s){
     if (typeof x.ds === "string") p.desc = x.ds;
     if (typeof x.ct === "string" && x.ct.trim()) p.cat = x.ct.trim();
     if (x.oc) p._oc = true;
+    if (Array.isArray(x.op)) p.opciones = x.op.filter(o => o && o.n).map(o => ({ n:String(o.n), p:+o.p || 0, c:o.c || "" }));
   }
   for (const n of s.n || []){
     if (!n || !n.id || byId(n.id) || n.oc || !n.nm || !(n.precio > 0)) continue;
     const q = { id:n.id, cat:(n.ct||"Otros").trim(), nombre:n.nm.trim(), desc:n.ds||"", precio:n.precio, foto:"", fotos:[] };
     if (n.antes) q.antes = n.antes; if (n.sin) q.sinStock = true;
+    if (Array.isArray(n.op) && n.op.length) q.opciones = n.op.filter(o => o && o.n).map(o => ({ n:String(o.n), p:+o.p || 0, c:o.c || "" }));
     let at = -1; D.productos.forEach((p,i) => { if (p.cat === q.cat) at = i; });
     if (at < 0) D.productos.push(q); else D.productos.splice(at + 1, 0, q);
   }

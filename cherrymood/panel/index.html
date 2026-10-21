@@ -165,6 +165,13 @@ details pre{white-space:pre-wrap;font-family:ui-monospace,Menlo,monospace;font-s
 .tgl[aria-pressed="true"]{border-color:var(--acc);color:var(--acc);background:rgba(57,210,106,.1)}
 .tgl.bad[aria-pressed="true"]{border-color:#ff7a7a;color:#ff9a9a;background:rgba(255,122,122,.1)}
 .prow .nm em{font-style:normal;font-size:.68rem;font-weight:800;color:var(--bg);background:var(--acc);border-radius:6px;padding:1px 6px;margin-left:6px;vertical-align:2px}
+.tonos{grid-column:1/-1;display:grid;gap:6px;padding:8px 0 2px}
+.tonos > b{font-size:.78rem;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.ton{display:grid;grid-template-columns:44px minmax(0,1fr) 36px;gap:6px;align-items:center}
+.ton input[type=color]{width:44px;height:40px;padding:2px;border-radius:10px;border:1px solid var(--line);background:var(--bg)}
+.ton input[data-tn]{font-size:16px;padding:9px 10px;border-radius:10px;border:1px solid var(--line);background:var(--bg);color:var(--fg);width:100%}
+.ton button{height:36px;border-radius:10px;border:1px solid var(--line);color:var(--muted)}
+.tadd{justify-self:start;padding:8px 12px;border-radius:10px;border:1.5px dashed var(--line);font-weight:700;font-size:.85rem}
 .fstrip{grid-column:1/-1;display:flex;gap:8px;overflow-x:auto;padding:2px 0 4px}
 .fstrip .ft{position:relative;flex:0 0 64px;height:64px;border-radius:12px;overflow:hidden;background:var(--sunk);border:2px solid transparent}
 .fstrip .ft.main{border-color:var(--acc)}
@@ -299,7 +306,7 @@ details pre{white-space:pre-wrap;font-family:ui-monospace,Menlo,monospace;font-s
 
 <script>
 /* ---------- configuración del cliente ---------- */
-const CFG = {"nombre": "Cherry Mood", "sheet": "1W7bLBLQev6xfisgqklAOX-M-bwlv_es_RpVmePuaLCY", "gid": "245098590", "pin": "5208", "key": "cherrymood", "match": "Cherry Mood", "demo": [["Labial Superstay Vinyl Ink", 14500], ["Máscara Lash Sensational", 12900], ["Gloss Lifter", 11800], ["Base Fit Me", 15900], ["Corrector Instant Age Rewind", 13500], ["Rubor líquido", 9800]], "demoNames": ["Sofi", "Cami", "Agus", "Mica", "Flor", "Juli", "Lu", "Belu"], "demoOps": ["Tono 1", "Tono 2", "Tono 3", ""]};
+const CFG = {"nombre": "Cherry Mood", "sheet": "1W7bLBLQev6xfisgqklAOX-M-bwlv_es_RpVmePuaLCY", "gid": "245098590", "pin": "5208", "key": "cherrymood", "match": "Cherry Mood", "demo": [["Labial Superstay Vinyl Ink", 14500], ["Máscara Lash Sensational", 12900], ["Gloss Lifter", 11800], ["Base Fit Me", 15900], ["Corrector Instant Age Rewind", 13500], ["Rubor líquido", 9800]], "demoNames": ["Sofi", "Cami", "Agus", "Mica", "Flor", "Juli", "Lu", "Belu"], "demoOps": ["Tono 1", "Tono 2", "Tono 3", ""], "tonos": true};
 const TZ = "America/Argentina/Buenos_Aires";
 const $ = s => document.querySelector(s);
 const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
@@ -797,11 +804,11 @@ async function openProds(){
           precio: x && x.bp === b.precio && x.precio > 0 ? x.precio : b.precio,
           antes: x && x.ba === (b.antes||0) ? (x.antes||0) : (b.antes||0),
           sin: x && x.bs === !!b.sinStock ? !!x.sin : !!b.sinStock,
-          oc: !!x?.oc,
+          oc: !!x?.oc, op: (Array.isArray(x?.op) ? x.op : (b.opciones || [])).map(o => ({ n:o.n, p:o.p||0, c:o.c||"" })), opchg: Array.isArray(x?.op),
           f: Array.isArray(x?.f) ? x.f.slice() : baseFotos(b).map((_, i) => "b:" + i), fchg: Array.isArray(x?.f) }; })
     };
     for (const n of s?.n || []){
-      const q = { id:n.id, nuevo:true, nombre:n.nm||"", desc:n.ds||"", cat:n.ct||"", precio:n.precio||0, antes:n.antes||0, sin:!!n.sin, oc:!!n.oc, f:(n.f||[]).slice(), fchg:true };
+      const q = { id:n.id, nuevo:true, nombre:n.nm||"", desc:n.ds||"", cat:n.ct||"", precio:n.precio||0, antes:n.antes||0, sin:!!n.sin, oc:!!n.oc, f:(n.f||[]).slice(), fchg:true, op:(n.op||[]).map(o => ({ n:o.n, p:o.p||0, c:o.c||"" })), opchg:true };
       let at = -1; ED.p.forEach((p,i) => { if (p.cat === q.cat) at = i; });
       if (at < 0) ED.p.push(q); else ED.p.splice(at + 1, 0, q);
     }
@@ -817,6 +824,7 @@ function rowHTML(p, i){
   return `<div class="prow${p.oc||p.sin?" off":""}" data-i="${i}">${main?`<img src="${main}" alt="" loading="lazy">`:`<div class="noimg"></div>`}<div class="nm"><b>${esc(p.nombre || "Producto nuevo")}${p.nuevo?"<em>NUEVO</em>":""}</b><small>${p.sin?"Sin stock":p.oc?"Oculto":"A la venta"}${p.cat?" · "+esc(p.cat):""}</small></div>
       ${p.base?.soloStock ? "" : `<div class="flds"><label>Precio<input inputmode="numeric" data-f="precio" value="${p.precio||""}" placeholder="$"></label><label>Precio tachado (opcional)<input inputmode="numeric" data-f="antes" value="${p.antes||""}" placeholder="—"></label></div>`}
       ${p.base?.soloPrecio ? "" : `<div class="tg2"><button class="tgl" data-t="stock" aria-pressed="${!p.sin}">${p.sin?"✖️ Sin stock":"✅ Hay stock"}</button><button class="tgl" data-t="ver" aria-pressed="${!p.oc}">${p.oc?"🙈 Oculto":"👁️ Se muestra"}</button></div>`}
+      ${CFG.tonos && !p.base?.soloStock ? `<div class="tonos"><b>Tonos / colores</b>${(p.op||[]).map((o,k) => `<div class="ton"><input type="color" data-tc="${k}" value="${/^#[0-9a-f]{6}$/i.test(o.c) ? o.c : "#c98d9a"}" aria-label="Color"><input data-tn="${k}" value="${esc(o.n)}" placeholder="Nombre del tono (ej: 55 Royal)"><button type="button" data-tx="${k}" aria-label="Sacar tono">✕</button></div>`).join("")}<button type="button" class="tadd" data-tadd>＋ Agregar tono</button></div>` : ""}
       ${p.base?.soloStock ? "" : `<div class="fstrip">${fotos}<label class="add">＋<br>Foto<input type="file" accept="image/*" multiple data-add></label></div>`}
       ${!p.base?.soloStock && p.f.length > 1 ? `<div class="fhint">La de borde verde es la principal. Tocá otra para ponerla primera.</div>` : ""}
       <details class="ed"${p._open?" open":""}><summary>✏️ Nombre, descripción y categoría</summary><div class="eg">
@@ -838,6 +846,8 @@ function drawProds(){
 }
 const dirty = () => pSt("Tenés cambios sin publicar");
 $("#pList").addEventListener("input", e => { const r = e.target.closest(".prow"); if (!r) return; const p = ED.p[+r.dataset.i];
+  if (e.target.dataset.tc !== undefined){ p.op[+e.target.dataset.tc].c = e.target.value; p.opchg = true; dirty(); return; }
+  if (e.target.dataset.tn !== undefined){ p.op[+e.target.dataset.tn].n = e.target.value; p.opchg = true; dirty(); return; }
   if (e.target.dataset.f){ p[e.target.dataset.f] = +String(e.target.value).replace(/\D/g,"") || 0; dirty(); }
   else if (e.target.dataset.s){ p[e.target.dataset.s] = e.target.value; dirty(); } });
 $("#pList").addEventListener("toggle", e => { const r = e.target.closest?.(".prow"); if (r && e.target.matches("details")) ED.p[+r.dataset.i]._open = e.target.open; }, true);
@@ -851,6 +861,8 @@ $("#pList").addEventListener("change", async e => {
 $("#pList").addEventListener("click", e => {
   const r = e.target.closest(".prow"); if (!r) return; const i = +r.dataset.i, p = ED.p[i];
   const rm = e.target.closest("[data-rm]"), ft = e.target.closest("[data-fi]"), t = e.target.closest("[data-t]");
+  if (e.target.closest("[data-tadd]")){ p.op = p.op || []; p.op.push({ n:"", p:0, c:"#c98d9a" }); p.opchg = true; drawRow(i); dirty(); const ins = $(`#pList .prow[data-i="${i}"]`).querySelectorAll("[data-tn]"); ins[ins.length-1]?.focus(); return; }
+  const tx = e.target.closest("[data-tx]"); if (tx){ p.op.splice(+tx.dataset.tx, 1); p.opchg = true; drawRow(i); dirty(); return; }
   if (rm){ p.f.splice(+rm.dataset.rm, 1); p.fchg = true; drawRow(i); dirty(); return; }
   if (ft){ const k = +ft.dataset.fi; if (k){ p.f.unshift(p.f.splice(k, 1)[0]); p.fchg = true; drawRow(i); dirty(); } return; }
   if (e.target.closest("[data-del]")){ if (confirm("¿Borrar este producto nuevo?")){ ED.p.splice(i, 1); drawProds(); dirty(); } return; }
@@ -858,7 +870,7 @@ $("#pList").addEventListener("click", e => {
   if (t.dataset.t === "stock") p.sin = !p.sin; else p.oc = !p.oc; drawRow(i); dirty(); });
 $("#pNew").onclick = () => {
   if (!ED) return;
-  ED.p.unshift({ id: "n" + Date.now().toString(36), nuevo:true, nombre:"", desc:"", cat:"", precio:0, antes:0, sin:false, oc:false, f:[], fchg:true, _open:true });
+  ED.p.unshift({ id: "n" + Date.now().toString(36), nuevo:true, nombre:"", desc:"", cat:"", precio:0, antes:0, sin:false, oc:false, f:[], fchg:true, op:[], opchg:true, _open:true });
   drawProds(); dirty(); const el = $('#pList .prow[data-i="0"]'); el?.scrollIntoView({block:"center"}); el?.querySelector('[data-s="nombre"]')?.focus();
 };
 $("#pAviso").addEventListener("input", e => { ED.aviso = e.target.value; dirty(); });
@@ -893,8 +905,9 @@ $("#pPub").onclick = async () => {
         if (tx(p.desc) !== tx(p.base.desc)) o.ds = tx(p.desc);
         if (tx(p.cat) && tx(p.cat) !== p.base.cat) o.ct = tx(p.cat);
         if (p.fchg) o.f = p.f.slice();
+        if (p.opchg) o.op = (p.op||[]).filter(t => tx(t.n)).map(t => ({ n:tx(t.n), p:t.p||0, c:t.c||"" }));
         return o; }),
-      n: ED.p.filter(p => p.nuevo).map(p => ({ id:p.id, nm:tx(p.nombre), ds:tx(p.desc), ct:tx(p.cat), precio:p.precio, antes:p.antes||0, sin:p.sin, oc:p.oc, f:p.f.slice() })) };
+      n: ED.p.filter(p => p.nuevo).map(p => ({ id:p.id, nm:tx(p.nombre), ds:tx(p.desc), ct:tx(p.cat), precio:p.precio, antes:p.antes||0, sin:p.sin, oc:p.oc, f:p.f.slice(), op:(p.op||[]).filter(t => tx(t.n)).map(t => ({ n:tx(t.n), p:t.p||0, c:t.c||"" })) })) };
     const json = JSON.stringify(snap);
     const sig = await crypto.subtle.sign({name:"Ed25519"}, key.k, new TextEncoder().encode(json));
     await enviar("CAMBIO[cherrymood] " + json + " FIRMA " + u64(sig), "CAMBIO DE PRODUCTOS (panel)");
