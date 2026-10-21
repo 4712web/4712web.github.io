@@ -617,7 +617,7 @@ function comanda(o){
   L.push(R);
   if (o.nota){ L.push(...partir("NOTA: " + o.nota)); L.push(R); }
   if (o.envio) L.push(...dosCol("Envio", o.envio));
-  L.push(...dosCol("TOTAL", fmt(o.total)), ...partir("Pago: " + (o.pago || "")), R, centro("Gracias!"), "", "", "");
+  L.push(...dosCol("TOTAL", fmt(o.total)), ...partir("Pago: " + (o.pago || "")), R, centro("Gracias!"), ...Array(CFG.feed || 7).fill(""), ".");  /* avance final: lo que queda entre el cabezal y el borde de corte */
   let t = document.getElementById("ticket"); if (!t){ t = document.createElement("div"); t.id = "ticket"; document.body.appendChild(t); }
   t.innerHTML = `<pre>${esc(L.join("\n"))}</pre>`;
   /* driver "Generic / Text Only": ubica cada letra en una grilla de 10 por pulgada y 6 renglones por pulgada,
