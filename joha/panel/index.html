@@ -599,10 +599,12 @@ function comanda(o){
   t.innerHTML = `<div class="c big">${esc(CFG.nombre.toUpperCase())}</div><div class="c">${o.id && !/^\d+$/.test(o.id) ? "Pedido #" + esc(o.id) + " · " : ""}${f}</div><hr>
     <div class="big">${esc(o.cliente)}</div>${o.tel ? `<div>Tel: ${esc(o.tel)}</div>` : ""}
     <div><b>${/retir/i.test(o.entrega || "") ? "RETIRA EN EL LOCAL" : "DELIVERY"}</b>${/km/.test(o.entrega || "") ? " " + esc((o.entrega.match(/\(.*\)/) || [""])[0]) : ""}</div>${o.dir ? `<div>${esc(o.dir)}</div>` : ""}<hr>
-    ${o.items.map(it => { const [n, ...ad] = it.nombre.split(" + "); return `<div class="it"><span>${it.q} x ${esc(ad.length && !/^\d/.test(ad[0]) ? n : it.nombre)}</span><span>${fmt(it.sub)}</span></div>${ad.length && !/^\d/.test(ad[0]) ? ad.map(a => `<div class="op">+ ${esc(a)}</div>`).join("") : ""}${it.op ? `<div class="op">» ${esc(it.op)}</div>` : ""}`; }).join("")}<hr>
+    ${o.items.map(it => { const [n, ...ad] = it.nombre.split(" + "); return `<div class="it"><span>${it.q} x ${esc(ad.length && !/^\d/.test(ad[0]) ? n : it.nombre)}</span><span>${fmt(it.sub)}</span></div>${ad.length && !/^\d/.test(ad[0]) ? ad.map(a => `<div class="op">+ ${esc(a)}</div>`).join("") : ""}${it.op ? `<div class="op">> ${esc(it.op)}</div>` : ""}`; }).join("")}<hr>
     ${o.nota ? `<div><b>NOTA:</b> ${esc(o.nota)}</div><hr>` : ""}
     ${o.envio ? `<div class="row"><span>Envío</span><span>${esc(o.envio)}</span></div>` : ""}
     <div class="row tot"><span>TOTAL</span><span>${fmt(o.total)}</span></div><div>Pago: ${esc(o.pago || "")}</div><hr><div class="c">¡Gracias!</div>`;
+  /* impresoras térmicas con driver genérico: sin acentos ni símbolos raros */
+  t.innerHTML = t.innerHTML.normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/·/g, "-").replace(/»/g, ">").replace(/¡/g, "").replace(/¿/g, "").replace(/[^\x00-\x7F]/g, "");
   setTimeout(() => window.print(), 50);
 }
 document.addEventListener("click", e => {
