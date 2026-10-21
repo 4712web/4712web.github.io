@@ -299,7 +299,7 @@ details pre{white-space:pre-wrap;font-family:ui-monospace,Menlo,monospace;font-s
 
 <script>
 /* ---------- configuración del cliente ---------- */
-const CFG = {"nombre": "Lo de Joha", "sheet": "1W7bLBLQev6xfisgqklAOX-M-bwlv_es_RpVmePuaLCY", "gid": "245098590", "pin": "4106", "key": "joha", "match": "PEDIDO[joha]", "varAny": true, "comanda": true, "sinTalles": true, "demo": [["Doble cheese", 10000], ["Explosiva doble", 15000], ["Súper pancho clásico", 2000], ["Promo bajonera", 32000], ["Súper de carne", 18000], ["Fernet + 1 Coca", 26000]], "demoNames": ["Juan", "Caro", "Lucas", "Mica", "Nahuel", "Flor", "Rodrigo", "Sole"], "demoOps": ["", "", "Ketchup, Bacon, Papas", ""]};
+const CFG = {"nombre": "Lo de Joha", "sheet": "1W7bLBLQev6xfisgqklAOX-M-bwlv_es_RpVmePuaLCY", "gid": "245098590", "pin": "4106", "key": "joha", "match": "PEDIDO[joha]", "varAny": true, "comanda": true, "textOnly": true, "sinTalles": true, "demo": [["Doble cheese", 10000], ["Explosiva doble", 15000], ["Súper pancho clásico", 2000], ["Promo bajonera", 32000], ["Súper de carne", 18000], ["Fernet + 1 Coca", 26000]], "demoNames": ["Juan", "Caro", "Lucas", "Mica", "Nahuel", "Flor", "Rodrigo", "Sole"], "demoOps": ["", "", "Ketchup, Bacon, Papas", ""]};
 const TZ = "America/Argentina/Buenos_Aires";
 const $ = s => document.querySelector(s);
 const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
@@ -620,6 +620,11 @@ function comanda(o){
   L.push(...dosCol("TOTAL", fmt(o.total)), ...partir("Pago: " + (o.pago || "")), R, centro("Gracias!"), "", "", "");
   let t = document.getElementById("ticket"); if (!t){ t = document.createElement("div"); t.id = "ticket"; document.body.appendChild(t); }
   t.innerHTML = `<pre>${esc(L.join("\n"))}</pre>`;
+  /* driver "Generic / Text Only": ubica cada letra en una grilla de 10 por pulgada y 6 renglones por pulgada,
+     así que la letra tiene que medir justo 0,1" (Courier 16px) y arrancar en el borde izquierdo */
+  if (CFG.textOnly && !document.getElementById("txtOnly")){ const st = document.createElement("style"); st.id = "txtOnly";
+    st.textContent = '@media print{@page{size:auto;margin:0}#ticket{width:auto!important;margin:0!important;padding:0!important}#ticket pre{font:400 16px/16px "Courier New",Courier,monospace!important;letter-spacing:0!important}}';
+    document.head.appendChild(st); }
   setTimeout(() => window.print(), 50);
 }
 document.addEventListener("click", e => {
