@@ -192,7 +192,7 @@ details pre{white-space:pre-wrap;font-family:ui-monospace,Menlo,monospace;font-s
   @page{size:58mm auto;margin:0}
   html,body{background:#fff!important;margin:0!important;padding:0!important}
   body>*:not(#ticket){display:none!important}
-  #ticket{display:block!important;width:48mm;margin:0 auto;padding:2mm 0 6mm;color:#000;font:12px/1.3 "Courier New",monospace}
+  #ticket{display:block!important;width:48mm;margin:0 auto;padding:2mm 0 6mm;color:#000} #ticket pre{margin:0;font:bold 11px/1.25 "Courier New",monospace;white-space:pre;color:#000}
   #ticket .c{text-align:center} #ticket .big{font-size:16px;font-weight:700} #ticket hr{border:0;border-top:1px dashed #000;margin:5px 0}
   #ticket .it{display:flex;justify-content:space-between;gap:6px;font-weight:700;font-size:13px} #ticket .it span:last-child{white-space:nowrap} #ticket .op{padding-left:10px;font-size:12px;font-weight:400}
   #ticket .row{display:flex;justify-content:space-between} #ticket .tot{font-size:15px;font-weight:700}
@@ -593,18 +593,33 @@ function waAviso(o, tipo){
     listo: `¡Hola ${nom}! ✅ Tu pedido${num} de ${CFG.nombre} ya está listo para retirar. ¡Te esperamos!` };
   return "https://wa.me/" + waNum(o.tel) + "?text=" + encodeURIComponent(T[tipo]);
 }
+/* comanda en texto de ancho fijo (32 columnas = papel de 58 mm), así sale igual con cualquier driver */
+const COLS = CFG.cols || 32;
+const asc = s => String(s ?? "").normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/·/g, "-").replace(/[«»]/g, "").replace(/[¡¿]/g, "").replace(/[^\x20-\x7E]/g, "").trim();
+function partir(s, w = COLS, sang = ""){ const out = []; let l = "";
+  for (const p of asc(s).split(/\s+/).filter(Boolean)){ const pp = p.length > w ? p.match(new RegExp(`.{1,${w - sang.length}}`, "g")) : [p];
+    for (const x of pp){ if (!l) l = (out.length ? sang : "") + x; else if ((l + " " + x).length <= w) l += " " + x; else { out.push(l); l = sang + x; } } }
+  if (l) out.push(l); return out; }
+const centro = s => { s = asc(s).slice(0, COLS); return " ".repeat(Math.max(0, Math.floor((COLS - s.length) / 2))) + s; };
+function dosCol(izq, der){ der = asc(der); const L = partir(izq, COLS - der.length - 1, "  "); const last = L.pop() || "";
+  return [...L, last + " ".repeat(Math.max(1, COLS - last.length - der.length)) + der]; }
 function comanda(o){
   const f = o.fecha.toLocaleString("es-AR",{timeZone:TZ,day:"2-digit",month:"2-digit",hour:"2-digit",minute:"2-digit",hourCycle:"h23"});
+  const R = "-".repeat(COLS), L = [];
+  L.push(centro(CFG.nombre.toUpperCase()), centro((o.id && !/^\d+$/.test(o.id) ? "Pedido #" + o.id + "  " : "") + f), R);
+  L.push(...partir(o.cliente)); if (o.tel) L.push(...partir("Tel: " + o.tel));
+  L.push(...partir((/retir/i.test(o.entrega || "") ? "RETIRA EN EL LOCAL" : "DELIVERY") + (/km/.test(o.entrega || "") ? " " + (o.entrega.match(/\(.*\)/) || [""])[0] : "")));
+  if (o.dir) L.push(...partir(o.dir)); L.push(R);
+  for (const it of o.items){ const [n, ...ad] = it.nombre.split(" + "), sep = ad.length && !/^\d/.test(ad[0]);
+    L.push(...dosCol(it.q + " x " + (sep ? n : it.nombre), fmt(it.sub)));
+    if (sep) for (const a of ad) L.push(...partir("+ " + a, COLS - 2, "  ").map(x => "  " + x));
+    if (it.op) L.push(...partir("> " + it.op, COLS - 2, "  ").map(x => "  " + x)); }
+  L.push(R);
+  if (o.nota){ L.push(...partir("NOTA: " + o.nota)); L.push(R); }
+  if (o.envio) L.push(...dosCol("Envio", o.envio));
+  L.push(...dosCol("TOTAL", fmt(o.total)), ...partir("Pago: " + (o.pago || "")), R, centro("Gracias!"), "", "", "");
   let t = document.getElementById("ticket"); if (!t){ t = document.createElement("div"); t.id = "ticket"; document.body.appendChild(t); }
-  t.innerHTML = `<div class="c big">${esc(CFG.nombre.toUpperCase())}</div><div class="c">${o.id && !/^\d+$/.test(o.id) ? "Pedido #" + esc(o.id) + " · " : ""}${f}</div><hr>
-    <div class="big">${esc(o.cliente)}</div>${o.tel ? `<div>Tel: ${esc(o.tel)}</div>` : ""}
-    <div><b>${/retir/i.test(o.entrega || "") ? "RETIRA EN EL LOCAL" : "DELIVERY"}</b>${/km/.test(o.entrega || "") ? " " + esc((o.entrega.match(/\(.*\)/) || [""])[0]) : ""}</div>${o.dir ? `<div>${esc(o.dir)}</div>` : ""}<hr>
-    ${o.items.map(it => { const [n, ...ad] = it.nombre.split(" + "); return `<div class="it"><span>${it.q} x ${esc(ad.length && !/^\d/.test(ad[0]) ? n : it.nombre)}</span><span>${fmt(it.sub)}</span></div>${ad.length && !/^\d/.test(ad[0]) ? ad.map(a => `<div class="op">+ ${esc(a)}</div>`).join("") : ""}${it.op ? `<div class="op">> ${esc(it.op)}</div>` : ""}`; }).join("")}<hr>
-    ${o.nota ? `<div><b>NOTA:</b> ${esc(o.nota)}</div><hr>` : ""}
-    ${o.envio ? `<div class="row"><span>Envío</span><span>${esc(o.envio)}</span></div>` : ""}
-    <div class="row tot"><span>TOTAL</span><span>${fmt(o.total)}</span></div><div>Pago: ${esc(o.pago || "")}</div><hr><div class="c">¡Gracias!</div>`;
-  /* impresoras térmicas con driver genérico: sin acentos ni símbolos raros */
-  t.innerHTML = t.innerHTML.normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/·/g, "-").replace(/»/g, ">").replace(/¡/g, "").replace(/¿/g, "").replace(/[^\x00-\x7F]/g, "");
+  t.innerHTML = `<pre>${esc(L.join("\n"))}</pre>`;
   setTimeout(() => window.print(), 50);
 }
 document.addEventListener("click", e => {
