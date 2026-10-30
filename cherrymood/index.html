@@ -218,6 +218,7 @@ details.prev summary{cursor:pointer;color:var(--muted);font-size:.84rem;font-wei
 .note{font-size:.82rem;color:var(--muted);margin:0}
 #pSheet{z-index:25}
 .two{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+#entSeg{grid-auto-flow:row;grid-template-columns:1fr 1fr}
 #entSeg label{font-size:.8rem;padding-inline:4px}
 .note2{font-size:.82rem;color:var(--muted);margin:0}
 .cover{background-color:#efdde1}
@@ -319,8 +320,13 @@ details.prev summary{cursor:pointer;color:var(--muted);font-size:.84rem;font-wei
     <div class="co">
       <h4>Entrega</h4>
       <label class="fld">Nombre<input id="cName" autocomplete="name" placeholder="¿A nombre de quién?"></label>
-      <div class="seg" id="entSeg"><input type="radio" name="ent" id="entRet" value="retiro" checked><label for="entRet">Retiro</label><input type="radio" name="ent" id="entDom" value="dom"><label for="entDom">Correo a domicilio</label><input type="radio" name="ent" id="entSuc" value="suc"><label for="entSuc">Correo a sucursal</label></div>
+      <div class="seg" id="entSeg"><input type="radio" name="ent" id="entRet" value="retiro" checked><label for="entRet">Retiro</label><input type="radio" name="ent" id="entExp" value="exp"><label for="entExp">🛵 Express por la zona</label><input type="radio" name="ent" id="entDom" value="dom"><label for="entDom">Correo a domicilio</label><input type="radio" name="ent" id="entSuc" value="suc"><label for="entSuc">Correo a sucursal</label></div>
       <p class="note2" id="retiroInfo"></p>
+      <div id="expBox" class="co" style="margin:0" hidden>
+        <label class="fld">Calle y número<input id="cExp" autocomplete="street-address" placeholder="Ej: Mitre 3500"></label>
+        <label class="fld">Barrio, piso o entre calles<input id="cExpRef" placeholder="Ej: Sarandí, entre Pasteur y Beazley"></label>
+        <p class="note2">🛵 Envío en moto por Avellaneda y alrededores. Te pasamos el costo y el horario por WhatsApp.</p>
+      </div>
       <div id="addrBox" class="co" style="margin:0" hidden>
         <div class="two"><label class="fld">DNI<input id="cDni" inputmode="numeric" placeholder="Sin puntos"></label><label class="fld">Código postal<input id="cCp" inputmode="numeric" placeholder="Ej: 1872"></label></div>
         <label class="fld">Provincia<select id="cProv"><option value="">Elegí tu provincia</option></select></label>
@@ -459,7 +465,8 @@ const labelOf = l => { const p = byId(l.id); if (isG(p)) return `${p.nombre} (${
 const qtyOf = id => cart.filter(l=>l.id===id).reduce((a,l)=>a+(l.g?gUnits(l):l.q),0);
 const subtotal = () => cart.reduce((a,l)=>a+unitOf(l)*l.q,0);
 const count = () => cart.reduce((a,l)=>a+(l.g?gUnits(l):l.q),0);
-const isDelivery = () => !$("#entRet").checked;
+const isDelivery = () => ["dom","suc"].includes(entMode());
+const isExp = () => entMode()==="exp";
 const entMode = () => (document.querySelector("input[name=ent]:checked")||{}).value || "retiro";
 const PROVS = ["Buenos Aires","CABA","Catamarca","Chaco","Chubut","Córdoba","Corrientes","Entre Ríos","Formosa","Jujuy","La Pampa","La Rioja","Mendoza","Misiones","Neuquén","Río Negro","Salta","San Juan","San Luis","Santa Cruz","Santa Fe","Santiago del Estero","Tierra del Fuego","Tucumán"];
 const envioCoord = () => isDelivery() && C().envio == null;
@@ -606,6 +613,7 @@ function renderCart(){
   // totales
   const sub = subtotal(), env = envio(), c = C();
   let s = `<div class="r"><span>Subtotal</span><span class="price">${fmt(sub)}</span></div>`;
+  if (isExp()) s += `<div class="r"><span>Envío express</span><span class="price">A coordinar</span></div>`;
   if (isDelivery()) s += `<div class="r"><span>Envío</span><span class="price">${envioCoord()?"A cotizar":env?fmt(env):"Gratis"}</span></div>`;
   s += `<div class="r t"><span>Total</span><span class="price">${fmt(sub+env)}</span></div>`;
   if (c.minimo && sub < c.minimo) s += `<div class="prog bad"><span>Pedido mínimo ${fmt(c.minimo)}: te faltan ${fmt(c.minimo-sub)}</span><div class="trk"><i style="width:${Math.min(100,sub/c.minimo*100)}%"></i></div></div>`;
@@ -617,6 +625,7 @@ function renderCheckout(){
   const c = C(), st = openState();
   const mode = entMode();
   $("#addrBox").hidden = !isDelivery(); $("#domBox").hidden = mode!=="dom"; $("#sucBox").hidden = mode!=="suc";
+  $("#expBox").hidden = mode!=="exp";
   $("#retiroInfo").hidden = mode!=="retiro"; $("#retiroInfo").textContent = c.direccion ? `Retirás en ${c.direccion}. Te avisamos por WhatsApp cuando esté listo.` : "";
   $("#payEf").disabled = isDelivery(); if (isDelivery() && $("#payEf").checked) $("#payTr").checked = true;
   const later = false;
@@ -637,6 +646,7 @@ function renderCheckout(){
   else if (isDelivery() && !$("#cCp").value.trim()) why = "Completá el código postal.";
   else if (mode==="dom" && !$("#cAddr").value.trim()) why = "Completá la dirección de entrega.";
   else if (mode==="suc" && !$("#cSuc").value.trim()) why = "Indicá la sucursal de Correo Argentino.";
+  else if (mode==="exp" && !$("#cExp").value.trim()) why = "Completá la dirección para el envío.";
   else if (later && !$("#cSlot").value) why = "Elegí un horario.";
   const msg = buildMsg(); $("#preview").textContent = msg;
   const a = $("#send"); a.setAttribute("aria-disabled", why ? "true" : "false");
@@ -654,6 +664,7 @@ function buildMsg(){
   m += `Nombre: ${$("#cName").value.trim()}\n`;
   const md = entMode();
   if (md==="retiro") m += `Entrega: Retiro en el local${c.direccion?" ("+c.direccion+")":""}\n`;
+  else if (md==="exp") m += `Entrega: 🛵 Envío express por la zona (costo a coordinar)\nDirección: ${$("#cExp").value.trim()}${$("#cExpRef").value.trim()?" ("+$("#cExpRef").value.trim()+")":""}\n`;
   else {
     m += `Entrega: Correo Argentino ${md==="dom"?"a domicilio":"a sucursal"}\nDNI: ${$("#cDni").value.trim()}\nProvincia: ${$("#cProv").value}\nLocalidad: ${$("#cLoc").value.trim()} (CP ${$("#cCp").value.trim()})\n`;
     m += md==="dom" ? `Dirección: ${$("#cAddr").value.trim()}${$("#cRef").value.trim()?" ("+$("#cRef").value.trim()+")":""}\n` : `Sucursal: ${$("#cSuc").value.trim()}\n`;
@@ -665,7 +676,7 @@ function buildMsg(){
   const n = $("#cNote").value.trim(); if (n) m += `\nAclaraciones: ${n}`;
   return m;
 }
-const CLI_F = ["cName","cDni","cCp","cProv","cLoc","cAddr","cRef","cSuc"];
+const CLI_F = ["cName","cDni","cCp","cProv","cLoc","cAddr","cRef","cSuc","cExp","cExpRef"];
 function saveCliente(){ const o = {ent:entMode(),pay:document.querySelector("input[name=pay]:checked").id}; CLI_F.forEach(id=>o[id]=$("#"+id).value); ls.set(LS_CLI,o); }
 function loadCliente(){ const c = ls.get(LS_CLI); if(!c) return; CLI_F.forEach(id=>{ if(c[id]!=null) $("#"+id).value=c[id]; }); const r = document.querySelector(`input[name=ent][value="${c.ent}"]`); if(r) r.checked=true; if(c.pay&&$("#"+c.pay)) $("#"+c.pay).checked=true; }
 function showDone(){
@@ -706,7 +717,7 @@ document.querySelectorAll(".sheet").forEach(s=>s.addEventListener("click",e=>{ i
 $("#q").addEventListener("input", renderMenu);
 $("#openCart").onclick = () => { newOrderNo(); renderCart(); $("#cSheet").hidden = false; };
 $("#cProv").innerHTML += PROVS.map(x=>`<option>${x}</option>`).join("");
-["cName","cAddr","cRef","cNote","cCash","cDni","cCp","cLoc","cSuc"].forEach(id=>$("#"+id).addEventListener("input",renderCheckout));
+["cName","cAddr","cRef","cNote","cCash","cDni","cCp","cLoc","cSuc","cExp","cExpRef"].forEach(id=>$("#"+id).addEventListener("input",renderCheckout));
 $("#cProv").addEventListener("change",renderCheckout);
 $("#cSlot").addEventListener("change",renderCheckout);
 document.querySelectorAll("input[name=ent]").forEach(r=>r.addEventListener("change",renderCart));
