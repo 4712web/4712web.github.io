@@ -139,7 +139,7 @@ function render(){
     <button class="btn sec" onclick="compartirCierre(${ef},${tr},${fi},${cob.ef+cob.tr},${vs.length})">Mandar cierre por WhatsApp</button>`;
   }
   if(view==='prods'){
-    m.innerHTML=`<button class="btn" style="margin-bottom:12px" onclick="editProd()">+ Agregar producto</button>
+    m.innerHTML=`<div class="row" style="margin-bottom:12px"><button class="btn" onclick="editProd()">+ Agregar</button><button class="btn ok" onclick="subirPrecios()">📈 Subir %</button></div>
     <div class="card list">${S.prods.map(p=>`<div class="li" onclick="editProd('${p.id}')"><b>${p.n}</b><span>${fmt(p.p)}</span></div>`).join('')}</div>
     <button class="btn sec" onclick="if(confirm('¿Borrar todo y volver a la demo?')){S=JSON.parse(JSON.stringify(SEED));save();render()}">Reiniciar demo</button>`;
   }
@@ -201,6 +201,16 @@ function editProd(id){
   <button class="btn" onclick="guardarProd('${id||''}')">Guardar</button>${id?`<button class="btn sec" style="margin-top:10px;color:#c00" onclick="S.prods=S.prods.filter(x=>x.id!=='${id}');save();cerrar();render()">Borrar</button>`:''}`);
 }
 function guardarProd(id){const n=$('#pn').value.trim(),p=+$('#pp').value;if(!n||!(p>0))return;if(id){const x=S.prods.find(x=>x.id===id);x.n=n;x.p=p}else S.prods.push({id:uid(),n,p});save();cerrar();render()}
+function subirPrecios(){
+  abrir(`<h3>Subir todos los precios</h3><div class="mut" style="margin-bottom:12px">Se aplica a los ${S.prods.length} productos y se redondea a $10.</div>
+  <div class="chips">${[5,10,15,20].map(x=>`<button onclick="$('#pc').value=${x};prevPc()">+${x}%</button>`).join('')}</div>
+  <input class="f" id="pc" type="number" inputmode="decimal" placeholder="% de aumento" oninput="prevPc()">
+  <div class="mut" id="pv" style="margin-bottom:12px"></div>
+  <button class="btn ok" onclick="aplicarPc()">Aplicar aumento</button>`);
+}
+const nuevoP=(p,pc)=>Math.round(p*(1+pc/100)/10)*10;
+function prevPc(){const pc=+$('#pc').value,e=$('#pv');if(!(pc>0)){e.textContent='';return}const x=S.prods[0];e.textContent=x?`Ej: ${x.n} pasa de ${fmt(x.p)} a ${fmt(nuevoP(x.p,pc))}`:''}
+function aplicarPc(){const pc=+$('#pc').value;if(!(pc>0))return;S.prods.forEach(x=>x.p=nuevoP(x.p,pc));save();cerrar();render();toast('Precios +'+pc+'% ✓')}
 render();
 </script>
 </body>
