@@ -84,9 +84,9 @@ input.f{width:100%;padding:14px;border-radius:14px;border:1px solid var(--line);
 <script>
 const $=s=>document.querySelector(s);
 const fmt=n=>'$'+Math.round(n).toLocaleString('es-AR');
-const dk=t=>{const d=new Date(t);return d.getFullYear()+'-'+(d.getMonth()+1)+'-'+d.getDate()};const hoyKey=()=>dk(Date.now());
+const dk=t=>{const d=new Date(t);return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')};const hoyKey=()=>dk(Date.now());
 const uid=()=>Math.random().toString(36).slice(2,9);
-const KEY='caja4712-demo';
+const KEY='caja4712-demo2';
 const SEED={prods:[
  ['Coca-Cola 2,25L',4500],['Pan x kg',3200],['Leche 1L',1800],['Yerba 1kg',5500],['Azúcar 1kg',1600],['Fideos 500g',1400],
  ['Aceite 900ml',3900],['Galletitas',1500],['Huevos x12',4200],['Agua 2L',1900],['Cerveza 1L',3300],['Alfajor',900],
@@ -95,11 +95,12 @@ const SEED={prods:[
  {id:uid(),n:'Doña Rosa',movs:[{t:Date.now()-864e5*3,tipo:'deuda',m:8700,det:'Varios'}]},
  {id:uid(),n:'Carlos (el de la esquina)',movs:[{t:Date.now()-864e5,tipo:'deuda',m:4500,det:'Coca-Cola 2,25L'}]}
 ]};
+(function(){const D=864e5,P=SEED.prods;for(let d=29;d>=1;d--){const n=8+Math.floor(Math.random()*14);for(let k=0;k<n;k++){const its=[];const c=1+Math.floor(Math.random()*3);for(let j=0;j<c;j++){const p=P[Math.floor(Math.random()*(j?P.length:8))];its.push({n:p.n,p:p.p,q:1+Math.floor(Math.random()*2)})}const t=Date.now()-d*D+k*1800e3-36e6;const r=Math.random();SEED.ventas.push({id:uid(),t,items:its,total:its.reduce((s,i)=>s+i.p*i.q,0),medio:r<.55?'ef':r<.9?'tr':'fi'})}}})();
 let S;
 try{S=JSON.parse(localStorage.getItem(KEY))}catch(e){}
 if(!S||!S.prods)S=JSON.parse(JSON.stringify(SEED));
 const save=()=>{try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}};
-let cart=[],view='vender',q='';
+let cart=[],view='vender',q='',per='hoy';
 
 function toast(t){const e=$('#toast');e.textContent=t;e.classList.add('show');setTimeout(()=>e.classList.remove('show'),1600)}
 function abrir(h){$('#sheet').innerHTML=h;$('#modal').classList.add('show')}
@@ -127,25 +128,37 @@ function render(){
     <button class="btn sec" onclick="nuevoCliente()">+ Agregar cliente</button>`;
   }
   if(view==='caja'){
-    const d=hoyKey(),vs=S.ventas.filter(v=>v.d===d);
-    const ef=vs.filter(v=>v.medio==='ef').reduce((s,v)=>s+v.total,0);
-    const tr=vs.filter(v=>v.medio==='tr').reduce((s,v)=>s+v.total,0);
-    const fi=vs.filter(v=>v.medio==='fi').reduce((s,v)=>s+v.total,0);
-    let cob={ef:0,tr:0};S.clientes.forEach(c=>c.movs.forEach(mv=>{if(mv.tipo==='pago'&&dk(mv.t)===d)cob[mv.medio||'ef']+=mv.m}));
-    m.innerHTML=`<div class="card"><div class="lbl">Vendido hoy</div><div class="big">${fmt(ef+tr+fi)}</div><div class="mut">${vs.length} ${vs.length===1?'venta':'ventas'}</div></div>
+    const now=new Date(),d=hoyKey();
+    const ini={hoy:new Date(now.getFullYear(),now.getMonth(),now.getDate()).getTime(),sem:new Date(now.getFullYear(),now.getMonth(),now.getDate()-6).getTime(),mes:new Date(now.getFullYear(),now.getMonth(),1).getTime()}[per];
+    const vs=S.ventas.filter(v=>v.t>=ini);
+    const sum=md=>vs.filter(v=>v.medio===md).reduce((s,v)=>s+v.total,0);
+    const ef=sum('ef'),tr=sum('tr'),fi=sum('fi');
+    let cob={ef:0,tr:0};S.clientes.forEach(c=>c.movs.forEach(mv=>{if(mv.tipo==='pago'&&mv.t>=ini)cob[mv.medio||'ef']+=mv.m}));
+    const tit={hoy:'Vendido hoy',sem:'Últimos 7 días',mes:'Este mes'}[per];
+    const top={};vs.forEach(v=>v.items.forEach(i=>{top[i.n]=top[i.n]||{q:0,m:0};top[i.n].q+=i.q;top[i.n].m+=i.p*i.q}));
+    const tops=Object.entries(top).sort((a,b)=>b[1].m-a[1].m).slice(0,5);
+    const dias={};if(per!=='hoy')vs.forEach(v=>{const k=dk(v.t);dias[k]=(dias[k]||0)+v.total});
+    const dmax=Math.max(1,...Object.values(dias));
+    const sinResp=!S.ultResp||Date.now()-S.ultResp>7*864e5;
+    m.innerHTML=`${sinResp?`<div class="card" style="background:#FFF4E5" onclick="respaldar()"><b>⚠️ Hace más de 7 días que no guardás una copia</b><div class="mut">Tocá acá para guardarla en tu WhatsApp</div></div>`:''}
+    <div class="chips" style="display:grid;grid-template-columns:repeat(3,1fr)">${['hoy','sem','mes'].map(k=>`<button style="${per===k?'background:var(--a);color:#fff;border-color:var(--a)':''}" onclick="per='${k}';render()">${{hoy:'Hoy',sem:'7 días',mes:'Mes'}[k]}</button>`).join('')}</div>
+    <div class="card"><div class="lbl">${tit}</div><div class="big">${fmt(ef+tr+fi)}</div><div class="mut">${vs.length} ${vs.length===1?'venta':'ventas'}</div></div>
     <div class="card">
       <div class="kv"><span>💵 Efectivo</span><b>${fmt(ef)}</b></div>
       <div class="kv"><span>📲 Transferencia</span><b>${fmt(tr)}</b></div>
       <div class="kv"><span>📒 Fiado</span><b class="debe">${fmt(fi)}</b></div>
       <div class="kv"><span>↩️ Cobros de fiado</span><b>${fmt(cob.ef+cob.tr)}</b></div>
     </div>
-    <div class="card"><div class="lbl">Tenés que tener en la caja</div><div class="big" style="color:var(--ok)">${fmt(ef+cob.ef)}</div><div class="mut">Efectivo de ventas + cobros de fiado en efectivo</div></div>
-    <div class="card list"><div class="lbl">Últimas ventas</div>${vs.length?vs.slice().reverse().slice(0,30).map(v=>`<div class="li"><div><b>${fmt(v.total)}</b><div class="mut">${new Date(v.t).toLocaleTimeString('es-AR',{hour:'2-digit',minute:'2-digit'})} · ${v.items.map(i=>i.q+'× '+i.n).join(', ')}</div></div><div class="mut">${{ef:'Efectivo',tr:'Transf.',fi:'Fiado'}[v.medio]}</div></div>`).join(''):'<div class="empty">Todavía no vendiste nada hoy</div>'}</div>
-    <button class="btn sec" onclick="compartirCierre(${ef},${tr},${fi},${cob.ef+cob.tr},${vs.length})">Mandar cierre por WhatsApp</button>`;
+    ${per==='hoy'?`<div class="card"><div class="lbl">Tenés que tener en la caja</div><div class="big" style="color:var(--ok)">${fmt(ef+cob.ef)}</div><div class="mut">Efectivo de ventas + cobros de fiado en efectivo</div></div>`:
+    `<div class="card"><div class="lbl">Por día</div>${Object.entries(dias).sort().map(([k,v])=>{const [y,mo,da]=k.split('-');return `<div style="display:flex;align-items:center;gap:10px;padding:6px 0;font-size:14px"><span style="width:44px" class="mut">${da}/${mo}</span><div style="flex:1;height:12px;background:var(--bg);border-radius:6px;overflow:hidden"><div style="width:${v/dmax*100}%;height:100%;background:var(--a);border-radius:6px"></div></div><b style="width:84px;text-align:right">${fmt(v)}</b></div>`}).join('')||'<div class="empty">Sin ventas</div>'}</div>`}
+    <div class="card list"><div class="lbl">Lo que más vendés</div>${tops.length?tops.map(([n,x],i)=>`<div class="li"><div><b>${i+1}. ${n}</b><div class="mut">${x.q} unidades</div></div><b>${fmt(x.m)}</b></div>`).join(''):'<div class="empty">Todavía no hay ventas</div>'}</div>
+    ${per==='hoy'?`<div class="card list"><div class="lbl">Últimas ventas</div>${vs.length?vs.slice().reverse().slice(0,30).map(v=>`<div class="li"><div><b>${fmt(v.total)}</b><div class="mut">${new Date(v.t).toLocaleTimeString('es-AR',{hour:'2-digit',minute:'2-digit'})} · ${v.items.map(i=>i.q+'× '+i.n).join(', ')}</div></div><div class="mut">${{ef:'Efectivo',tr:'Transf.',fi:'Fiado'}[v.medio]}</div></div>`).join(''):'<div class="empty">Todavía no vendiste nada hoy</div>'}</div>
+    <button class="btn sec" onclick="compartirCierre(${ef},${tr},${fi},${cob.ef+cob.tr},${vs.length})">Mandar cierre por WhatsApp</button>`:''}`;
   }
   if(view==='prods'){
     m.innerHTML=`<div class="row" style="margin-bottom:12px"><button class="btn" onclick="editProd()">+ Agregar</button><button class="btn ok" onclick="subirPrecios()">📈 Subir %</button></div>
     <div class="card list">${S.prods.map(p=>`<div class="li" onclick="editProd('${p.id}')"><b>${p.n}</b><span>${fmt(p.p)}</span></div>`).join('')}</div>
+    <div class="card"><div class="lbl">Copia de seguridad</div><div class="mut" style="margin-bottom:12px">Guardá una copia de tus ventas, fiados y productos en tu WhatsApp. Si cambiás o perdés el celu, la recuperás.${S.ultResp?'<br>Última copia: '+new Date(S.ultResp).toLocaleDateString('es-AR'):''}</div><div class="row"><button class="btn" onclick="respaldar()">💾 Guardar copia</button><button class="btn sec" onclick="$('#fimp').click()">📂 Recuperar</button></div><input type="file" id="fimp" accept=".json,application/json" class="hide" onchange="recuperar(this.files[0])"></div>
     <button class="btn sec" onclick="if(confirm('¿Borrar todo y volver a la demo?')){S=JSON.parse(JSON.stringify(SEED));save();render()}">Reiniciar demo</button>`;
   }
 }
@@ -216,6 +229,14 @@ function subirPrecios(){
 const nuevoP=(p,pc)=>Math.round(p*(1+pc/100)/10)*10;
 function prevPc(){const pc=+$('#pc').value,e=$('#pv');if(!(pc>0)){e.textContent='';return}const x=S.prods[0];e.textContent=x?`Ej: ${x.n} pasa de ${fmt(x.p)} a ${fmt(nuevoP(x.p,pc))}`:''}
 function aplicarPc(){const pc=+$('#pc').value;if(!(pc>0))return;S.prods.forEach(x=>x.p=nuevoP(x.p,pc));save();cerrar();render();toast('Precios +'+pc+'% ✓')}
+async function respaldar(){
+  const name='caja-copia-'+new Date().toLocaleDateString('es-AR').replaceAll('/','-')+'.json';
+  const blob=new Blob([JSON.stringify(S)],{type:'application/json'});
+  const file=new File([blob],name,{type:'application/json'});
+  try{if(navigator.canShare&&navigator.canShare({files:[file]})){await navigator.share({files:[file],title:'Copia de la caja',text:'Copia de seguridad de la caja'});S.ultResp=Date.now();save();render();toast('Copia guardada ✓');return}}catch(e){if(e.name==='AbortError')return}
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=name;a.click();S.ultResp=Date.now();save();render();toast('Copia descargada ✓');
+}
+function recuperar(f){if(!f)return;const r=new FileReader();r.onload=()=>{try{const x=JSON.parse(r.result);if(!x.prods||!x.ventas||!x.clientes)throw 0;if(confirm('¿Reemplazar los datos de este celu por la copia?')){S=x;save();render();toast('Copia recuperada ✓')}}catch(e){toast('Ese archivo no es una copia válida')}};r.readAsText(f)}
 let dp=null;
 const isIOS=/iphone|ipad|ipod/i.test(navigator.userAgent),standalone=matchMedia('(display-mode: standalone)').matches||navigator.standalone;
 if(!standalone){if(isIOS){$('#inst').classList.remove('hide');$('#brand').classList.add('hide')}}
