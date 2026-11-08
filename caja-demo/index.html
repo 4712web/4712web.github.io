@@ -5,6 +5,11 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
 <meta name="theme-color" content="#3D5AFE">
 <title>Caja · 4712web</title>
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="icon" href="icon-192.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Caja">
 <style>
 :root{--a:#3D5AFE;--ink:#0A0B10;--mut:#5B6170;--line:#E4E7EE;--bg:#F4F5F8;--ok:#12A150;--warn:#E8590C}
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
@@ -58,7 +63,7 @@ input.f{width:100%;padding:14px;border-radius:14px;border:1px solid var(--line);
 </style>
 </head>
 <body>
-<header><div><b>Almacén Demo</b><br><small id="hoy"></small></div><small>4712web</small></header>
+<header><div><b>Almacén Demo</b><br><small id="hoy"></small></div><button id="inst" class="hide" onclick="instalar()" style="border:0;background:var(--a);color:#fff;border-radius:999px;padding:9px 14px;font:700 14px system-ui">📲 Instalar</button><small id="brand">4712web</small></header>
 <main id="main"></main>
 
 <div class="ticket hide" id="ticket">
@@ -211,6 +216,13 @@ function subirPrecios(){
 const nuevoP=(p,pc)=>Math.round(p*(1+pc/100)/10)*10;
 function prevPc(){const pc=+$('#pc').value,e=$('#pv');if(!(pc>0)){e.textContent='';return}const x=S.prods[0];e.textContent=x?`Ej: ${x.n} pasa de ${fmt(x.p)} a ${fmt(nuevoP(x.p,pc))}`:''}
 function aplicarPc(){const pc=+$('#pc').value;if(!(pc>0))return;S.prods.forEach(x=>x.p=nuevoP(x.p,pc));save();cerrar();render();toast('Precios +'+pc+'% ✓')}
+let dp=null;
+const isIOS=/iphone|ipad|ipod/i.test(navigator.userAgent),standalone=matchMedia('(display-mode: standalone)').matches||navigator.standalone;
+if(!standalone){if(isIOS){$('#inst').classList.remove('hide');$('#brand').classList.add('hide')}}
+addEventListener('beforeinstallprompt',e=>{e.preventDefault();dp=e;$('#inst').classList.remove('hide');$('#brand').classList.add('hide')});
+addEventListener('appinstalled',()=>{$('#inst').classList.add('hide');$('#brand').classList.remove('hide');toast('App instalada ✓')});
+function instalar(){if(dp){dp.prompt();dp=null;return}abrir(`<h3>Instalar en iPhone</h3><div class="kv"><span>1. Tocá el botón Compartir</span><b>⬆️</b></div><div class="kv"><span>2. "Agregar a pantalla de inicio"</span><b>➕</b></div><div class="kv"><span>3. Tocá "Agregar"</span><b>✓</b></div><button class="btn" style="margin-top:14px" onclick="cerrar()">Listo</button>`)}
+if('serviceWorker' in navigator)navigator.serviceWorker.register('sw.js').catch(()=>{});
 render();
 </script>
 </body>
