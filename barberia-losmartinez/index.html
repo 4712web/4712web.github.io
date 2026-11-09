@@ -157,6 +157,7 @@ function render(){
     m.innerHTML=`<div class="row" style="margin-bottom:12px"><button class="btn" onclick="editProd()">+ Agregar</button><button class="btn ok" onclick="subirPrecios()">📈 Subir %</button></div>
     <div class="card list">${S.prods.map(p=>`<div class="li" onclick="editProd('${p.id}')"><b>${p.n}</b><span>${fmt(p.p)}</span></div>`).join('')}</div>
     <div class="card"><div class="lbl">Barberos</div>${S.barberos.map((b,i)=>`<div class="row"><input class="f" style="flex:2" value="${b}" onchange="if(this.value.trim()){S.barberos[${i}]=this.value.trim();save();toast('Guardado ✓')}"><input class="f" style="flex:1" type="number" inputmode="numeric" value="${S.com[i]||0}" onchange="S.com[${i}]=Math.max(0,Math.min(100,+this.value||0));save();toast('Comisión guardada ✓')"></div>`).join('')}<div class="mut">Nombre y % de comisión (0 = dueño)</div></div>
+    <button class="btn sec" style="margin-bottom:12px" onclick="cambiarClave()">🔒 Cambiar clave</button>
     <div class="card"><div class="lbl">Copia de seguridad</div><div class="mut" style="margin-bottom:12px">Guardá una copia de tus ventas, fiados y productos en tu WhatsApp. Si cambiás o perdés el celu, la recuperás.${S.ultResp?'<br>Última copia: '+new Date(S.ultResp).toLocaleDateString('es-AR'):''}</div><div class="row"><button class="btn" onclick="respaldar()">💾 Guardar copia</button><button class="btn sec" onclick="$('#fimp').click()">📂 Recuperar</button></div><input type="file" id="fimp" accept=".json,application/json" class="hide" onchange="recuperar(this.files[0])"></div>`;
   }
 }
@@ -246,6 +247,38 @@ addEventListener('appinstalled',()=>{$('#inst').classList.add('hide');$('#brand'
 function instalar(){if(dp){dp.prompt();dp=null;return}abrir(`<h3>Instalar en iPhone</h3><div class="kv"><span>1. Tocá el botón Compartir</span><b>⬆️</b></div><div class="kv"><span>2. "Agregar a pantalla de inicio"</span><b>➕</b></div><div class="kv"><span>3. Tocá "Agregar"</span><b>✓</b></div><button class="btn" style="margin-top:14px" onclick="cerrar()">Listo</button>`)}
 if('serviceWorker' in navigator)navigator.serviceWorker.register('sw.js').catch(()=>{});
 render();
+</script>
+<div id="lock" style="position:fixed;inset:0;z-index:50;background:#0A0B10;color:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;padding:20px">
+  <img src="icon-192.png" style="width:84px;height:84px;border-radius:50%">
+  <div id="lkT" style="font:700 20px system-ui">Ingresá tu clave</div>
+  <div id="lkD" style="display:flex;gap:14px"></div>
+  <div id="lkE" style="color:#ff6b6b;height:18px;font-size:14px"></div>
+  <div style="display:grid;grid-template-columns:repeat(3,76px);gap:14px"></div>
+</div>
+<style>.kp{width:76px;height:76px;border-radius:50%;border:0;background:#1d1f27;color:#fff;font:600 28px system-ui}.kp:active{background:var(--a)}.dot{width:16px;height:16px;border-radius:50%;border:2px solid #fff}.dot.f{background:var(--a);border-color:var(--a)}</style>
+<script>
+(function(){
+  const LK='caja-losmartinez-pin';let pin='',paso,primera='';
+  const get=()=>{try{return localStorage.getItem(LK)}catch(e){return null}};
+  const set=v=>{try{localStorage.setItem(LK,v)}catch(e){}};
+  async function h(x){const b=await crypto.subtle.digest('SHA-256',new TextEncoder().encode('lm4712:'+x));return [...new Uint8Array(b)].map(z=>z.toString(16).padStart(2,'0')).join('')}
+  const L=document.getElementById('lock'),T=document.getElementById('lkT'),D=document.getElementById('lkD'),E=document.getElementById('lkE');
+  L.lastElementChild.innerHTML=[1,2,3,4,5,6,7,8,9,'',0,'⌫'].map(k=>k===''?'<span></span>':`<button class="kp" data-k="${k}">${k}</button>`).join('');
+  const dots=()=>D.innerHTML=[0,1,2,3].map(i=>`<div class="dot ${i<pin.length?'f':''}"></div>`).join('');
+  function mostrar(){pin='';E.textContent='';paso=get()?'entrar':'crear';T.textContent=paso==='entrar'?'Ingresá tu clave':'Creá tu clave de 4 números';L.style.display='flex';dots()}
+  window.bloquear=mostrar;
+  L.addEventListener('click',async e=>{const k=e.target.dataset&&e.target.dataset.k;if(k===undefined)return;
+    if(k==='⌫'){pin=pin.slice(0,-1);dots();return}
+    if(pin.length>=4)return;pin+=k;dots();if(pin.length<4)return;
+    await new Promise(r=>setTimeout(r,120));
+    if(paso==='entrar'||paso==='entrar2'){if(await h(pin)===get()){if(paso==='entrar2'){paso='cambiar';T.textContent='Nueva clave de 4 números';pin='';dots()}else L.style.display='none'}else{E.textContent='Clave incorrecta';if(navigator.vibrate)navigator.vibrate(200);pin='';dots()}}
+    else if(paso==='crear'||paso==='cambiar'){primera=pin;paso='confirmar';pin='';T.textContent='Repetí la clave';dots()}
+    else if(paso==='confirmar'){if(pin===primera){set(await h(pin));L.style.display='none';if(window.toast)toast('Clave guardada ✓')}else{E.textContent='No coinciden, probá de nuevo';paso=get()?'cambiar':'crear';T.textContent='Creá tu clave de 4 números';pin='';dots()}}
+  });
+  window.cambiarClave=()=>{mostrar();paso='entrar2';T.textContent='Ingresá tu clave actual'};
+  let oculto=0;document.addEventListener('visibilitychange',()=>{if(document.hidden)oculto=Date.now();else if(oculto&&Date.now()-oculto>5*60e3)mostrar()});
+  mostrar();
+})();
 </script>
 </body>
 </html>
