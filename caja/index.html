@@ -90,7 +90,7 @@ const KEY='caja4712';
 const SEED={prods:[],barberos:[],com:[],ventas:[],clientes:[]};
 let S;
 try{S=JSON.parse(localStorage.getItem(KEY))}catch(e){}
-if(!S||!S.prods)S=JSON.parse(JSON.stringify(SEED));if(!S.barberos)S.barberos=[];if(!S.com)S.com=[];if(!S.ultResp)S.ultResp=Date.now();let barb=null;
+if(!S||!S.prods)S=JSON.parse(JSON.stringify(SEED));if(!S.barberos)S.barberos=[];if(!S.com)S.com=[];if(!S.ultResp)S.ultResp=Date.now();if(!S.gastos)S.gastos=[];if(!S.aperturas)S.aperturas={};let barb=null;
 const save=()=>{try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}};
 let cart=[],view='vender',q='',per='hoy';
 
@@ -131,24 +131,45 @@ function render(){
     const tops=Object.entries(top).sort((a,b)=>b[1].m-a[1].m).slice(0,5);
     const dias={};if(per!=='hoy')vs.forEach(v=>{const k=dk(v.t);dias[k]=(dias[k]||0)+v.total});
     const dmax=Math.max(1,...Object.values(dias));
+    const gs=S.gastos.filter(g=>g.t>=ini&&g.t<fin),gsum=md=>gs.filter(g=>!md||g.medio===md).reduce((s,g)=>s+g.m,0),gef=gsum('ef'),gtr=gsum('tr');
+    const ap=per==='hoy'?(S.aperturas[d]||0):0,enCaja=ap+ef+cob.ef-gef;
+    const ingresos=ef+tr+cob.ef+cob.tr,neto=ingresos-gef-gtr;
+    const ticket=vs.length?(ef+tr+fi)/vs.length:0;
+    const fin2=Math.min(fin,Date.now()),pIni=ini-(fin2-ini),pv=S.ventas.filter(v=>v.t>=pIni&&v.t<ini).reduce((s,v)=>s+v.total,0),tot=ef+tr+fi,dif=pv?Math.round((tot-pv)/pv*100):null;
+    const hs={};vs.forEach(v=>{const h=new Date(v.t).getHours();hs[h]=(hs[h]||0)+1});const hp=Object.entries(hs).sort((a,b)=>b[1]-a[1])[0];
+    const md=Object.entries(dias).sort((a,b)=>b[1]-a[1])[0];
+    const prevTxt={hoy:'ayer a esta hora',sem:'la semana anterior',ant:'la semana anterior',mes:'el mes pasado'}[per];
     const sinResp=!S.ultResp||Date.now()-S.ultResp>7*864e5;
     m.innerHTML=`${sinResp?`<div class="card" style="background:#FFF4E5" onclick="respaldar()"><b>⚠️ Hace más de 7 días que no guardás una copia</b><div class="mut">Tocá acá para guardarla en tu WhatsApp</div></div>`:''}
     <div class="chips" style="display:grid;grid-template-columns:repeat(4,1fr)">${['hoy','sem','ant','mes'].map(k=>`<button style="${per===k?'background:var(--a);color:#fff;border-color:var(--a)':''}" onclick="per='${k}';render()">${{hoy:'Hoy',sem:'Semana',ant:'Sem. pasada',mes:'Mes'}[k]}</button>`).join('')}</div>
     <div class="card"><div class="lbl">${tit}</div><div class="big">${fmt(ef+tr+fi)}</div><div class="mut">${vs.length} ${vs.length===1?'venta':'ventas'}</div></div>
-    <div class="card">
-      <div class="kv"><span>📒 Fiado</span><b class="debe">${fmt(fi)}</b></div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px"><div class="card" style="margin:0;background:#EAF7EF"><div class="lbl" style="color:var(--ok)">💵 Efectivo</div><div style="font-size:24px;font-weight:800">${fmt(ef+cob.ef)}</div></div><div class="card" style="margin:0;background:#E8F3FF"><div class="lbl" style="color:#0a66c2">📲 Mercado Pago</div><div style="font-size:24px;font-weight:800">${fmt(tr+cob.tr)}</div></div></div>
+    <div class="card"><div class="lbl">Resumen de plata</div>
+      <div class="kv"><span>💵 Ventas en efectivo</span><b>${fmt(ef)}</b></div>
+      <div class="kv"><span>📲 Ventas por Mercado Pago</span><b>${fmt(tr)}</b></div>
+      <div class="kv"><span>📒 Fiado (todavía no cobrado)</span><b class="debe">${fmt(fi)}</b></div>
       <div class="kv"><span>↩️ Cobros de fiado</span><b>${fmt(cob.ef+cob.tr)}</b></div>
+      <div class="kv"><span>💸 Gastos y retiros</span><b style="color:#c00">−${fmt(gef+gtr)}</b></div>
+      <div class="kv" style="border-top:2px solid var(--ink);margin-top:4px"><span><b>💰 Te quedó (neto)</b></span><b style="font-size:20px;color:${neto>=0?'var(--ok)':'#c00'}">${fmt(neto)}</b></div>
+    </div>
+    <div class="card"><div class="lbl">Datos del negocio</div>
+      <div class="kv"><span>🧾 Ticket promedio</span><b>${fmt(ticket)}</b></div>
+      <div class="kv"><span>📈 Contra ${prevTxt}</span><b style="color:${dif===null?'inherit':dif>=0?'var(--ok)':'#c00'}">${dif===null?'—':(dif>=0?'+':'')+dif+'%'}</b></div>
+      <div class="kv"><span>⏰ Hora con más ventas</span><b>${hp?hp[0]+':00 a '+(+hp[0]+1)+':00':'—'}</b></div>
+      ${per!=='hoy'?`<div class="kv"><span>⭐ Mejor día</span><b>${md?md[0].split('-').reverse().slice(0,2).join('/')+' · '+fmt(md[1]):'—'}</b></div>`:''}
     </div>
     ${S.barberos.length<2?'':S.barberos.map((bn,bi)=>{const pc=S.com[bi]||0;const bv=vs.filter(v=>v.barb===bn);const bt=bv.reduce((s,v)=>s+v.total,0);const sv={};bv.forEach(v=>v.items.forEach(i=>{sv[i.n]=(sv[i.n]||0)+i.q}));const bs=md=>bv.filter(v=>v.medio===md).reduce((s,v)=>s+v.total,0);return `<div class="card"><div class="lbl">🧑 ${bn}</div><div style="display:flex;justify-content:space-between;align-items:baseline"><div class="big">${fmt(bt)}</div><div class="mut">${bv.length} ${bv.length===1?'cliente':'clientes'}</div></div>
       <div class="kv"><span>💵 Efectivo</span><b>${fmt(bs('ef'))}</b></div><div class="kv"><span>📲 Mercado Pago</span><b>${fmt(bs('tr'))}</b></div><div class="kv"><span>📒 Fiado</span><b class="debe">${fmt(bs('fi'))}</b></div>
       ${pc?`<div style="background:var(--bg);border-radius:14px;padding:12px 14px;margin-top:10px"><div class="kv"><span>💈 Le toca a ${bn} (${pc}%)</span><b style="color:var(--ok)">${fmt(bt*pc/100)}</b></div><div class="kv"><span>🏠 Para el negocio (${100-pc}%)</span><b>${fmt(bt*(100-pc)/100)}</b></div></div>`:''}
       ${Object.keys(sv).length?`<div class="mut" style="margin-top:8px">${Object.entries(sv).sort((a,b)=>b[1]-a[1]).map(([n,q])=>q+'× '+n).join(' · ')}</div>`:''}</div>`}).join('')}
-    ${per==='hoy'?`<div class="card"><div class="lbl">Tenés que tener en la caja</div><div class="big" style="color:var(--ok)">${fmt(ef+cob.ef)}</div><div class="mut">Efectivo de ventas + cobros de fiado en efectivo</div></div>`:
+    ${per==='hoy'?`<div class="card"><div class="lbl">Tenés que tener en la caja</div><div class="big" style="color:var(--ok)">${fmt(enCaja)}</div>
+      <div class="kv"><span>🔓 Apertura (cambio)</span><b>${fmt(ap)}</b></div><div class="kv"><span>+ Ventas en efectivo</span><b>${fmt(ef)}</b></div><div class="kv"><span>+ Cobros de fiado en efectivo</span><b>${fmt(cob.ef)}</b></div><div class="kv"><span>− Gastos y retiros en efectivo</span><b style="color:#c00">${fmt(gef)}</b></div>
+      <div class="row" style="margin-top:10px"><button class="btn sec" onclick="apertura()">🔓 Apertura</button><button class="btn sec" onclick="nuevoGasto()">💸 Anotar gasto</button></div></div>`:
     `<div class="card"><div class="lbl">Por día</div>${Object.entries(dias).sort().map(([k,v])=>{const [y,mo,da]=k.split('-');return `<div style="display:flex;align-items:center;gap:10px;padding:6px 0;font-size:14px"><span style="width:44px" class="mut">${da}/${mo}</span><div style="flex:1;height:12px;background:var(--bg);border-radius:6px;overflow:hidden"><div style="width:${v/dmax*100}%;height:100%;background:var(--a);border-radius:6px"></div></div><b style="width:84px;text-align:right">${fmt(v)}</b></div>`}).join('')||'<div class="empty">Sin ventas</div>'}</div>`}
     <div class="card list"><div class="lbl">Lo que más vendés</div>${tops.length?tops.map(([n,x],i)=>`<div class="li"><div><b>${i+1}. ${n}</b><div class="mut">${x.q} ${x.q===1?'vez':'veces'}</div></div><b>${fmt(x.m)}</b></div>`).join(''):'<div class="empty">Todavía no hay ventas</div>'}</div>
+    <div class="card list"><div class="lbl">Gastos y retiros</div>${gs.length?gs.slice().reverse().map(g=>`<div class="li" onclick="borrarGasto('${g.id}')"><div><b style="color:#c00">−${fmt(g.m)}</b><div class="mut">${new Date(g.t).toLocaleDateString('es-AR',{day:'numeric',month:'numeric'})} · ${g.det||'Gasto'}</div></div><div class="mut">${g.medio==='tr'?'M. Pago':'Efectivo'} 🗑</div></div>`).join(''):'<div class="empty">Sin gastos</div>'}${per!=='hoy'?'<button class="btn sec" style="margin-top:10px" onclick="nuevoGasto()">💸 Anotar gasto</button>':''}</div>
     <div class="card list"><div class="lbl">${per==='hoy'?'Ventas de hoy':'Ventas'} · tocá una para corregirla</div>${vs.length?vs.slice().reverse().slice(0,60).map(v=>`<div class="li" onclick="editVenta('${v.id}')"><div><b>${fmt(v.total)}</b><div class="mut">${per==='hoy'?'':new Date(v.t).toLocaleDateString('es-AR',{day:'numeric',month:'numeric'})+' '}${new Date(v.t).toLocaleTimeString('es-AR',{hour:'2-digit',minute:'2-digit'})}${v.cli?' · 👤 '+v.cli:''}${v.barb?' · 🧑 '+v.barb:''} · ${v.items.map(i=>i.q+'× '+i.n).join(', ')}</div></div><div class="mut">${{ef:'Efectivo',tr:'M. Pago',fi:'Fiado'}[v.medio]} ✎</div></div>`).join(''):'<div class="empty">Sin ventas</div>'}</div>
-    <button class="btn sec" onclick="compartirCierre()">${per==='hoy'?'Mandar cierre por WhatsApp':'Mandar balance por WhatsApp'}</button>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px"><div class="card" style="margin:0;background:#EAF7EF"><div class="lbl" style="color:var(--ok)">💵 Efectivo</div><div style="font-size:26px;font-weight:800">${fmt(ef+cob.ef)}</div></div><div class="card" style="margin:0;background:#E8F3FF"><div class="lbl" style="color:#0a66c2">📲 Mercado Pago</div><div style="font-size:26px;font-weight:800">${fmt(tr+cob.tr)}</div></div></div>`;
+    <button class="btn sec" onclick="compartirCierre()">${per==='hoy'?'Mandar cierre por WhatsApp':'Mandar balance por WhatsApp'}</button>`;
   }
   if(view==='prods'){
     m.innerHTML=`<div class="row" style="margin-bottom:12px"><button class="btn" onclick="editProd()">+ Agregar</button><button class="btn ok" onclick="subirPrecios()">📈 Subir %</button></div>
@@ -157,7 +178,7 @@ function render(){
 
     <div class="card"><div class="lbl">Empleados (opcional)</div><div class="mut" style="margin-bottom:10px">Si atienden varios, cargalos y al cobrar elegís quién fue. El % es la comisión (0 = dueño).</div>${S.barberos.map((b,i)=>`<div class="row"><input class="f" style="flex:2" value="${b}" onchange="if(this.value.trim()){S.barberos[${i}]=this.value.trim();save();toast('Guardado ✓')}"><input class="f" style="flex:1" type="number" inputmode="numeric" value="${S.com[i]||0}" onchange="S.com[${i}]=Math.max(0,Math.min(100,+this.value||0));save();toast('Comisión guardada ✓')"><button class="btn sec" style="width:52px;flex:none;margin-bottom:10px" onclick="if(confirm('¿Sacar a ${b}?')){S.barberos.splice(${i},1);S.com.splice(${i},1);save();render()}">✕</button></div>`).join('')}<button class="btn sec" onclick="const n=prompt('Nombre del empleado');if(n&&n.trim()){S.barberos.push(n.trim());S.com.push(0);save();render()}">+ Agregar empleado</button></div>
     <button class="btn sec" style="margin-bottom:12px" onclick="cambiarClave()">🔒 Cambiar clave</button>
-    <div class="mut" style="text-align:center;margin:-4px 0 12px">Versión 2 · 4712web</div>
+    <div class="mut" style="text-align:center;margin:-4px 0 12px">Versión 3 · 4712web</div>
     <div class="card"><div class="lbl">Copia de seguridad</div><div class="mut" style="margin-bottom:12px">Guardá una copia de tus ventas, fiados y productos en tu WhatsApp. Si cambiás o perdés el celu, la recuperás.${S.ultResp?'<br>Última copia: '+new Date(S.ultResp).toLocaleDateString('es-AR'):''}</div><div class="row"><button class="btn" onclick="respaldar()">💾 Guardar copia</button><button class="btn sec" onclick="$('#fimp').click()">📂 Recuperar</button></div><input type="file" id="fimp" accept=".json,application/json" class="hide" onchange="recuperar(this.files[0])"></div>`;
   }
 }
@@ -268,16 +289,23 @@ async function finBienvenida(){const n=$('#obN').value.trim();if(!n){toast('Pon�
   S.nombre=n;S.lic=ym;const ps=[...document.querySelectorAll('.obP')],vs=[...document.querySelectorAll('.obV')];
   ps.forEach((x,i)=>{const nn=x.value.trim(),pp=+vs[i].value;if(nn&&pp>0)S.prods.push({id:uid(),n:nn,p:pp})});
   window._bloq=false;save();cerrar();ponerNombre();render();toast('¡Listo! Ya podés vender ✓')}
+function apertura(){const d=hoyKey();abrir(`<h3>🔓 Apertura de caja</h3><div class="mut" style="margin-bottom:12px">¿Con cuánta plata (cambio) arrancaste hoy?</div><input class="f" id="apM" type="number" inputmode="numeric" value="${S.aperturas[d]||''}" placeholder="$ 0"><button class="btn" onclick="S.aperturas['${d}']=+$('#apM').value||0;save();cerrar();render();toast('Apertura guardada ✓')">Guardar</button>`);setTimeout(()=>$('#apM').focus(),100)}
+function nuevoGasto(){window._gm='ef';abrir(`<h3>💸 Anotar gasto o retiro</h3><input class="f" id="gM" type="number" inputmode="numeric" placeholder="$ Monto"><input class="f" id="gD" placeholder="¿Qué fue? (proveedor, luz, retiro…)">
+  <div class="chips" id="gP" style="display:grid;grid-template-columns:1fr 1fr"><button data-p="ef" onclick="_gm='ef';pintarG()">💵 Efectivo</button><button data-p="tr" onclick="_gm='tr';pintarG()">📲 M. Pago</button></div>
+  <button class="btn" onclick="guardarGasto()">Guardar</button>`);pintarG();setTimeout(()=>$('#gM').focus(),100)}
+function pintarG(){document.querySelectorAll('#gP button').forEach(b=>{const x=b.dataset.p===_gm;b.style.background=x?'var(--a)':'#fff';b.style.color=x?'#fff':'';b.style.borderColor=x?'var(--a)':''})}
+function guardarGasto(){const m=+$('#gM').value;if(!(m>0)){toast('Poné el monto');return}S.gastos.push({id:uid(),t:Date.now(),m,medio:_gm,det:$('#gD').value.trim()});save();cerrar();render();toast('Gasto anotado ✓')}
+function borrarGasto(id){if(!confirm('¿Borrar este gasto?'))return;S.gastos=S.gastos.filter(g=>g.id!==id);save();render();toast('Gasto borrado ✓')}
 function rango(k){const n=new Date(),y=n.getFullYear(),m=n.getMonth(),d=n.getDate(),lun=d-((n.getDay()+6)%7);const f=x=>x.toLocaleDateString('es-AR',{day:'numeric',month:'numeric'});
   if(k==='hoy')return[new Date(y,m,d).getTime(),Infinity,'Vendido hoy'];
   if(k==='sem')return[new Date(y,m,lun).getTime(),Infinity,'Esta semana (desde el lunes '+f(new Date(y,m,lun))+')'];
   if(k==='ant')return[new Date(y,m,lun-7).getTime(),new Date(y,m,lun).getTime(),'Semana pasada ('+f(new Date(y,m,lun-7))+' al '+f(new Date(y,m,lun-1))+')'];
   return[new Date(y,m,1).getTime(),Infinity,'Este mes'];}
 function compartirCierre(){const [ini,fin,tit]=rango(per);const vs=S.ventas.filter(v=>v.t>=ini&&v.t<fin);const sm=(a,md)=>a.filter(v=>!md||v.medio===md).reduce((s,v)=>s+v.total,0);
-  let cob=0;S.clientes.forEach(c=>c.movs.forEach(mv=>{if(mv.tipo==='pago'&&mv.t>=ini&&mv.t<fin)cob+=mv.m}));
+  let cob=0,cobE=0;S.clientes.forEach(c=>c.movs.forEach(mv=>{if(mv.tipo==='pago'&&mv.t>=ini&&mv.t<fin){cob+=mv.m;if((mv.medio||'ef')==='ef')cobE+=mv.m}}));const gs=(S.gastos||[]).filter(g=>g.t>=ini&&g.t<fin),gt=gs.reduce((s,g)=>s+g.m,0),gE=gs.filter(g=>g.medio!=='tr').reduce((s,g)=>s+g.m,0),apx=per==='hoy'?((S.aperturas||{})[hoyKey()]||0):0;
   const pb=S.barberos.length<2?'':S.barberos.map((b,bi)=>{const pc=S.com[bi]||0;const x=vs.filter(v=>v.barb===b),t=sm(x);return `\n🧑 ${b}: ${fmt(t)} (${x.length} ${x.length===1?'cliente':'clientes'})\n   Efectivo ${fmt(sm(x,'ef'))} · M. Pago ${fmt(sm(x,'tr'))} · Fiado ${fmt(sm(x,'fi'))}${pc?`\n   Le toca (${pc}%): ${fmt(t*pc/100)}\n   Para el negocio: ${fmt(t*(100-pc)/100)}`:''}`}).join('');
   let dias='';if(per!=='hoy'){const dd={};vs.forEach(v=>{const k=dk(v.t);dd[k]=(dd[k]||0)+v.total});dias='\n\nPor día:'+Object.keys(dd).sort().map(k=>{const [y,mo,da]=k.split('-');return `\n${da}/${mo}: ${fmt(dd[k])}`}).join('')}
-  wa((`${per==='hoy'?'Cierre':'Balance'} ${S.nombre||''} · ${per==='hoy'?new Date().toLocaleDateString('es-AR'):tit}\nClientes: ${vs.length}\nEfectivo: ${fmt(sm(vs,'ef'))}\nMercado Pago: ${fmt(sm(vs,'tr'))}\nFiado: ${fmt(sm(vs,'fi'))}\nCobros de fiado: ${fmt(cob)}\nTOTAL: ${fmt(sm(vs))}\n${pb}${dias}`))}
+  wa((`${per==='hoy'?'Cierre':'Balance'} ${S.nombre||''} · ${per==='hoy'?new Date().toLocaleDateString('es-AR'):tit}\nClientes: ${vs.length}\nEfectivo: ${fmt(sm(vs,'ef'))}\nMercado Pago: ${fmt(sm(vs,'tr'))}\nFiado: ${fmt(sm(vs,'fi'))}\nCobros de fiado: ${fmt(cob)}\nTOTAL VENDIDO: ${fmt(sm(vs))}\nGastos y retiros: -${fmt(gt)}${gs.length?gs.map(g=>`\n   · ${g.det||'Gasto'}: ${fmt(g.m)}`).join(''):''}\nNETO: ${fmt(sm(vs,'ef')+sm(vs,'tr')+cob-gt)}${per==='hoy'?`\n\nEn la caja tiene que haber: ${fmt(apx+sm(vs,'ef')+cobE-gE)}`:''}\n${pb}${dias}`))}
 function editProd(id){
   const p=id?S.prods.find(x=>x.id===id):{n:'',p:''};
   abrir(`<h3>${id?'Editar':'Nuevo'} producto</h3><input class="f" id="pn" placeholder="Nombre" value="${p.n}"><input class="f" id="pp" type="number" inputmode="numeric" placeholder="Precio $" value="${p.p}">
