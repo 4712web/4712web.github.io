@@ -78,7 +78,7 @@ input.f{width:100%;padding:14px;border-radius:14px;border:1px solid var(--line);
   <button data-v="prods"><span>🏷️</span>Productos</button>
 </nav>
 
-<div class="modal" id="modal" onclick="if(event.target===this)cerrar()"><div class="sheet" id="sheet"></div></div>
+<div class="modal" id="modal" onclick="if(event.target===this&&!window._bloq)cerrar()"><div class="sheet" id="sheet"></div></div>
 <div class="toast" id="toast"></div>
 
 <script>
@@ -107,9 +107,9 @@ function render(){
   const m=$('#main');
   $('#ticket').classList.toggle('hide',!(view==='vender'&&cart.length));
   document.body.style.paddingBottom=(view==='vender'&&cart.length)?'calc(84px + 34vh)':'84px';
-  if(view==='vender'){
+  if(view==='vender'){const gb=estadoLic()==='gracia'?`<div class="card" style="background:#FFF4E5" onclick="pedirCodigo()"><b>⚠️ Tu mes venció</b><div class="mut">Tenés hasta el 10 para renovar. Tocá para poner el código.</div></div>`:'';
     const ps=S.prods.filter(p=>p.n.toLowerCase().includes(q.toLowerCase()));
-    m.innerHTML=`<input class="search" placeholder="Buscar…" value="${q}" oninput="q=this.value;renderGrid()"><div class="grid" id="grid"></div>`;
+    m.innerHTML=gb+`<input class="search" placeholder="Buscar…" value="${q}" oninput="q=this.value;renderGrid()"><div class="grid" id="grid"></div>`;
     renderGrid();
   }
   if(view==='fiado'){
@@ -153,10 +153,11 @@ function render(){
   if(view==='prods'){
     m.innerHTML=`<div class="row" style="margin-bottom:12px"><button class="btn" onclick="editProd()">+ Agregar</button><button class="btn ok" onclick="subirPrecios()">📈 Subir %</button></div>
     <div class="card list">${S.prods.map(p=>`<div class="li" onclick="editProd('${p.id}')"><b>${p.n}</b><span>${fmt(p.p)}</span></div>`).join('')}</div>
-    <div class="card"><div class="lbl">Negocio</div><input class="f" value="${S.nombre||''}" placeholder="Nombre del negocio" onchange="if(this.value.trim()){S.nombre=this.value.trim();save();ponerNombre();toast('Guardado ✓')}"></div>
+    <div class="card"><div class="lbl">Negocio</div><b style="font-size:18px">${S.nombre||''}</b><div class="mut" style="margin:6px 0 12px">${estadoLic()==='ok'?'✅ Activa hasta fin de '+mesTxt(S.lic):estadoLic()==='gracia'?'⚠️ Venció '+mesTxt(S.lic)+'. Tenés hasta el 10 para renovar':'⏸️ Pausada'}</div><button class="btn sec" onclick="pedirCodigo()">🔑 Poner código del mes</button></div>
+
     <div class="card"><div class="lbl">Empleados (opcional)</div><div class="mut" style="margin-bottom:10px">Si atienden varios, cargalos y al cobrar elegís quién fue. El % es la comisión (0 = dueño).</div>${S.barberos.map((b,i)=>`<div class="row"><input class="f" style="flex:2" value="${b}" onchange="if(this.value.trim()){S.barberos[${i}]=this.value.trim();save();toast('Guardado ✓')}"><input class="f" style="flex:1" type="number" inputmode="numeric" value="${S.com[i]||0}" onchange="S.com[${i}]=Math.max(0,Math.min(100,+this.value||0));save();toast('Comisión guardada ✓')"><button class="btn sec" style="width:52px;flex:none;margin-bottom:10px" onclick="if(confirm('¿Sacar a ${b}?')){S.barberos.splice(${i},1);S.com.splice(${i},1);save();render()}">✕</button></div>`).join('')}<button class="btn sec" onclick="const n=prompt('Nombre del empleado');if(n&&n.trim()){S.barberos.push(n.trim());S.com.push(0);save();render()}">+ Agregar empleado</button></div>
     <button class="btn sec" style="margin-bottom:12px" onclick="cambiarClave()">🔒 Cambiar clave</button>
-    <div class="mut" style="text-align:center;margin:-4px 0 12px">Versión 1 · 4712web</div>
+    <div class="mut" style="text-align:center;margin:-4px 0 12px">Versión 2 · 4712web</div>
     <div class="card"><div class="lbl">Copia de seguridad</div><div class="mut" style="margin-bottom:12px">Guardá una copia de tus ventas, fiados y productos en tu WhatsApp. Si cambiás o perdés el celu, la recuperás.${S.ultResp?'<br>Última copia: '+new Date(S.ultResp).toLocaleDateString('es-AR'):''}</div><div class="row"><button class="btn" onclick="respaldar()">💾 Guardar copia</button><button class="btn sec" onclick="$('#fimp').click()">📂 Recuperar</button></div><input type="file" id="fimp" accept=".json,application/json" class="hide" onchange="recuperar(this.files[0])"></div>`;
   }
 }
@@ -239,18 +240,34 @@ function guardarEv(id){const v=S.ventas.find(x=>x.id===id);const m=+$('#evM').va
   v.barb=_ev.barb;if(v.medio!=='fi'){v.medio=_ev.medio;const c=$('#evC').value.trim();v.cli=c||undefined}
   save();cerrar();render();toast('Venta corregida ✓')}
 function borrarVenta(id){if(!confirm('¿Borrar esta venta?'))return;const v=S.ventas.find(x=>x.id===id);const mv=movDe(v);if(mv)mv.c.movs=mv.c.movs.filter(x=>x!==mv.m);S.ventas=S.ventas.filter(x=>x.id!==id);save();cerrar();render();toast('Venta borrada ✓')}
+const LSEC='d604914749aff4575c7c04ee';
+const normN=n=>(n||'').normalize('NFD').replace(/[̀-ͯ]/g,'').toLowerCase().replace(/[^a-z0-9]/g,'');
+async function codigo(n,ym){const b=new Uint8Array(await crypto.subtle.digest('SHA-256',new TextEncoder().encode('4712k:'+LSEC+':'+normN(n)+':'+ym)));return String(((b[0]<<24)>>>0)+(b[1]<<16)+(b[2]<<8)+b[3]).slice(-6).padStart(6,'0')}
+const ymOf=d=>d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0');
+const ymAdd=(ym,k)=>{const [y,m]=ym.split('-').map(Number);return ymOf(new Date(y,m-1+k,1))};
+const MESES=['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
+const mesTxt=ym=>MESES[+ym.split('-')[1]-1];
+function estadoLic(){const cur=ymOf(new Date());if(S.lic&&S.lic>=cur)return'ok';if(S.lic===ymAdd(cur,-1)&&new Date().getDate()<=10)return'gracia';return'vencido'}
+async function activar(code,nombre){code=(code||'').replace(/\D/g,'');const cur=ymOf(new Date());let best=null;for(const k of [-1,0,1,2]){const ym=ymAdd(cur,k);if(await codigo(nombre||S.nombre,ym)===code)best=ym}return best}
+function pausada(){window._bloq=true;abrir(`<h3>⏸️ Tu caja está pausada</h3><div class="mut" style="margin-bottom:14px">Se terminó el mes. Para seguir usándola, aboná el mes y poné el código que te pasa 4712web. <b>Tus datos están guardados</b>, no se pierde nada.</div>
+  <input class="f" id="lcC" type="number" inputmode="numeric" placeholder="Código de 6 números"><button class="btn" onclick="ponerCodigo()">Activar</button>`)}
+function pedirCodigo(){abrir(`<h3>Poner código del mes</h3><input class="f" id="lcC" type="number" inputmode="numeric" placeholder="Código de 6 números"><button class="btn" onclick="ponerCodigo()">Activar</button>`)}
+async function ponerCodigo(){const ym=await activar($('#lcC').value);if(!ym){toast('Código incorrecto');return}if(!S.lic||ym>S.lic)S.lic=ym;save();window._bloq=false;cerrar();render();toast('Activada hasta fin de '+mesTxt(S.lic)+' ✓')}
+function chequearLic(){if(S.nombre&&estadoLic()==='vencido')pausada()}
 function ponerNombre(){$('#nomN').textContent=S.nombre||'Mi negocio';document.title='Caja · '+(S.nombre||'4712web')}
-function bienvenida(){
+function bienvenida(){window._bloq=true;
   abrir(`<h3>¡Bienvenido! 👋</h3><div class="mut" style="margin-bottom:14px">Configurá tu caja en 1 minuto.</div>
   <div class="lbl">Nombre de tu negocio</div><input class="f" id="obN" placeholder="Ej: Almacén Rosa">
   <div class="lbl">Tus productos más vendidos (podés agregar más después)</div>
   ${[1,2,3,4,5].map(i=>`<div class="row"><input class="f obP" style="flex:2" placeholder="Producto ${i}"><input class="f obV" style="flex:1" type="number" inputmode="numeric" placeholder="$"></div>`).join('')}
+  <div class="lbl">Código de activación</div><input class="f" id="obC" type="number" inputmode="numeric" placeholder="Te lo pasa 4712web">
   <button class="btn" onclick="finBienvenida()">Empezar</button>`);
 }
-function finBienvenida(){const n=$('#obN').value.trim();if(!n){toast('Poné el nombre de tu negocio');return}
-  S.nombre=n;const ps=[...document.querySelectorAll('.obP')],vs=[...document.querySelectorAll('.obV')];
+async function finBienvenida(){const n=$('#obN').value.trim();if(!n){toast('Poné el nombre de tu negocio');return}
+  const ym=await activar($('#obC').value,n);if(!ym){toast('El código no coincide con el nombre del negocio');return}
+  S.nombre=n;S.lic=ym;const ps=[...document.querySelectorAll('.obP')],vs=[...document.querySelectorAll('.obV')];
   ps.forEach((x,i)=>{const nn=x.value.trim(),pp=+vs[i].value;if(nn&&pp>0)S.prods.push({id:uid(),n:nn,p:pp})});
-  save();cerrar();ponerNombre();render();toast('¡Listo! Ya podés vender ✓')}
+  window._bloq=false;save();cerrar();ponerNombre();render();toast('¡Listo! Ya podés vender ✓')}
 function rango(k){const n=new Date(),y=n.getFullYear(),m=n.getMonth(),d=n.getDate(),lun=d-((n.getDay()+6)%7);const f=x=>x.toLocaleDateString('es-AR',{day:'numeric',month:'numeric'});
   if(k==='hoy')return[new Date(y,m,d).getTime(),Infinity,'Vendido hoy'];
   if(k==='sem')return[new Date(y,m,lun).getTime(),Infinity,'Esta semana (desde el lunes '+f(new Date(y,m,lun))+')'];
@@ -292,7 +309,7 @@ addEventListener('beforeinstallprompt',e=>{e.preventDefault();dp=e;$('#inst').cl
 addEventListener('appinstalled',()=>{$('#inst').classList.add('hide');$('#brand').classList.remove('hide');toast('App instalada ✓')});
 function instalar(){if(dp){dp.prompt();dp=null;return}abrir(`<h3>Instalar en iPhone</h3><div class="kv"><span>1. Tocá el botón Compartir</span><b>⬆️</b></div><div class="kv"><span>2. "Agregar a pantalla de inicio"</span><b>➕</b></div><div class="kv"><span>3. Tocá "Agregar"</span><b>✓</b></div><button class="btn" style="margin-top:14px" onclick="cerrar()">Listo</button>`)}
 if('serviceWorker' in navigator){const had=!!navigator.serviceWorker.controller;navigator.serviceWorker.register('sw.js',{updateViaCache:'none'}).then(r=>r.update()).catch(()=>{});let rl=false;navigator.serviceWorker.addEventListener('controllerchange',()=>{if(had&&!rl){rl=true;location.reload()}})}
-ponerNombre();window.trasLock=()=>{if(!S.nombre)bienvenida()};render();
+ponerNombre();window.trasLock=()=>{if(!S.nombre)bienvenida();else chequearLic()};render();
 </script>
 <div id="lock" style="position:fixed;inset:0;z-index:50;background:#0A0B10;color:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;padding:20px">
   <img src="icon-192.png" style="width:84px;height:84px;border-radius:50%">

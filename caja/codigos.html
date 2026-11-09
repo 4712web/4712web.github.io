@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<meta name="theme-color" content="#0A0B10">
+<title>Códigos · 4712web</title>
+<style>
+:root{--a:#3D5AFE;--ink:#0A0B10;--mut:#5B6170;--line:#E4E7EE;--bg:#F4F5F8;--ok:#12A150}
+*{box-sizing:border-box}
+body{margin:0;font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;background:var(--bg);color:var(--ink)}
+main{max-width:520px;margin:0 auto;padding:20px 16px}
+h1{font-size:22px;margin:6px 0 16px}
+.card{background:#fff;border-radius:18px;padding:16px;margin-bottom:12px;box-shadow:0 1px 0 var(--line)}
+.lbl{font-size:12px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--a);margin-bottom:6px}
+input,select{width:100%;padding:14px;border-radius:14px;border:1px solid var(--line);font-size:18px;margin-bottom:10px;background:#fff}
+.btn{border:0;border-radius:14px;padding:15px;font:700 16px system-ui;background:var(--a);color:#fff;width:100%}
+.btn.sec{background:#fff;color:var(--ink);border:1px solid var(--line);margin-top:10px}
+.code{font:800 48px/1 ui-monospace,Menlo,monospace;letter-spacing:.12em;text-align:center;padding:18px 0}
+.mut{color:var(--mut);font-size:14px}
+.hide{display:none}
+#lock{position:fixed;inset:0;background:#0A0B10;color:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;padding:20px}
+#lock input{max-width:240px;text-align:center;letter-spacing:.3em}
+#lock .btn{max-width:240px}
+</style>
+</head>
+<body>
+<div id="lock">
+  <b id="lkT" style="font-size:20px">Clave de 4712web</b>
+  <input id="lkI" type="password" inputmode="numeric" maxlength="8" placeholder="••••">
+  <button class="btn" onclick="entrar()">Entrar</button>
+  <div id="lkE" style="color:#ff6b6b;height:18px;font-size:14px"></div>
+</div>
+<main>
+  <h1>🔑 Códigos de la caja</h1>
+  <div class="card">
+    <div class="lbl">Nombre del negocio</div>
+    <input id="n" placeholder="Igual que lo puso el cliente" oninput="gen()">
+    <div class="lbl">Mes</div>
+    <select id="m" onchange="gen()"></select>
+    <div class="code" id="c">——————</div>
+    <div class="mut" id="nota" style="text-align:center"></div>
+    <button class="btn" onclick="copiar()">Copiar mensaje para WhatsApp</button>
+  </div>
+  <div class="mut">Mayúsculas, tildes y espacios no importan: "Almacén Rosa" y "almacen rosa" dan el mismo código. Si el cliente cambia el nombre, el código cambia.</div>
+</main>
+<script>
+const LSEC='d604914749aff4575c7c04ee';
+const normN=n=>(n||'').normalize('NFD').replace(/[̀-ͯ]/g,'').toLowerCase().replace(/[^a-z0-9]/g,'');
+async function codigo(n,ym){const b=new Uint8Array(await crypto.subtle.digest('SHA-256',new TextEncoder().encode('4712k:'+LSEC+':'+normN(n)+':'+ym)));return String(((b[0]<<24)>>>0)+(b[1]<<16)+(b[2]<<8)+b[3]).slice(-6).padStart(6,'0')}
+const ymOf=d=>d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0');
+const MESES=['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
+const $=s=>document.querySelector(s);
+const now=new Date();
+$('#m').innerHTML=[0,1,2].map(k=>{const d=new Date(now.getFullYear(),now.getMonth()+k,1);return `<option value="${ymOf(d)}">${MESES[d.getMonth()]} ${d.getFullYear()}${k===0?' (este mes)':''}</option>`}).join('');
+let cod='';
+async function gen(){const n=$('#n').value.trim();if(!normN(n)){$('#c').textContent='——————';$('#nota').textContent='';cod='';return}cod=await codigo(n,$('#m').value);$('#c').textContent=cod;$('#nota').textContent='Para "'+n+'", '+$('#m').selectedOptions[0].textContent}
+async function copiar(){if(!cod)return;const mes=$('#m').selectedOptions[0].textContent.replace(' (este mes)','');const t=`¡Gracias por el pago! 🙌\nTu código de la caja para ${mes} es: ${cod}\nPonelo en Productos → "Poner código del mes".`;
+  try{await navigator.clipboard.writeText(t);alertT('Copiado ✓')}catch(e){prompt('Copiá el mensaje:',t)}}
+function alertT(t){const b=document.querySelector('.btn:not(.sec)');const o=b.textContent;b.textContent=t;setTimeout(()=>b.textContent=o,1400)}
+// clave
+const LK='c4712-admin';
+async function h(x){const b=await crypto.subtle.digest('SHA-256',new TextEncoder().encode('adm4712:'+x));return [...new Uint8Array(b)].map(z=>z.toString(16).padStart(2,'0')).join('')}
+const getK=()=>{try{return localStorage.getItem(LK)}catch(e){return null}};
+if(!getK())$('#lkT').textContent='Creá tu clave (solo vos)';
+async function entrar(){const v=$('#lkI').value;if(v.length<4){$('#lkE').textContent='Mínimo 4 números';return}
+  const k=getK();if(!k){try{localStorage.setItem(LK,await h(v))}catch(e){}$('#lock').classList.add('hide');return}
+  if(await h(v)===k)$('#lock').classList.add('hide');else{$('#lkE').textContent='Clave incorrecta';$('#lkI').value=''}}
+$('#lkI').addEventListener('keydown',e=>{if(e.key==='Enter')entrar()});
+</script>
+</body>
+</html>
