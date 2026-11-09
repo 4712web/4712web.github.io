@@ -92,7 +92,7 @@ const SEED={prods:[
 ].map(([n,p])=>({id:uid(),n,p})),barberos:['Leandro','Junior'],com:[0,60],ventas:[],clientes:[]};
 let S;
 try{S=JSON.parse(localStorage.getItem(KEY))}catch(e){}
-if(!S||!S.prods)S=JSON.parse(JSON.stringify(SEED));if(!S.barberos)S.barberos=['Leandro','Junior'];if(!S.com)S.com=[0,60];if(!S.ultResp){S.ultResp=Date.now();save()}let barb=null;
+if(!S||!S.prods)S=JSON.parse(JSON.stringify(SEED));if(!S.barberos)S.barberos=['Leandro','Junior'];if(!S.com)S.com=[0,60];if(!S.ultResp)S.ultResp=Date.now();let barb=null;
 const save=()=>{try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}};
 let cart=[],view='vender',q='',per='hoy';
 
@@ -214,7 +214,14 @@ function verCliente(id){
   <button class="btn sec" style="margin-top:12px" onclick="recordar('${id}')">Recordarle por WhatsApp</button>`);
 }
 function pago(id,medio){const v=+$('#pm').value;if(!(v>0))return;const c=S.clientes.find(x=>x.id===id);c.movs.push({t:Date.now(),tipo:'pago',m:v,medio});save();cerrar();render();toast('Pago anotado ✓')}
-function recordar(id){const c=S.clientes.find(x=>x.id===id);window.open('https://wa.me/?text='+encodeURIComponent(`Hola ${c.n}! Te recuerdo que en el almacén quedó un saldo de ${fmt(deuda(c))}. ¡Gracias!`))}
+function recordar(id){const c=S.clientes.find(x=>x.id===id);wa((`Hola ${c.n}! Te recuerdo que en la barbería quedó un saldo de ${fmt(deuda(c))}. ¡Gracias!`))}
+async function wa(t){
+  let w=null;try{w=window.open('https://wa.me/?text='+encodeURIComponent(t),'_blank')}catch(e){}
+  if(w)return;
+  try{if(navigator.share){await navigator.share({text:t});return}}catch(e){if(e.name==='AbortError')return}
+  try{await navigator.clipboard.writeText(t);toast('Copiado ✓ Pegalo en WhatsApp');return}catch(e){}
+  abrir(`<h3>Copiá este texto</h3><textarea class="f" style="height:260px;font-size:14px" readonly>${t}</textarea><button class="btn" onclick="cerrar()">Listo</button>`);
+}
 function rango(k){const n=new Date(),y=n.getFullYear(),m=n.getMonth(),d=n.getDate(),lun=d-((n.getDay()+6)%7);const f=x=>x.toLocaleDateString('es-AR',{day:'numeric',month:'numeric'});
   if(k==='hoy')return[new Date(y,m,d).getTime(),Infinity,'Vendido hoy'];
   if(k==='sem')return[new Date(y,m,lun).getTime(),Infinity,'Esta semana (desde el lunes '+f(new Date(y,m,lun))+')'];
@@ -224,7 +231,7 @@ function compartirCierre(){const [ini,fin,tit]=rango(per);const vs=S.ventas.filt
   let cob=0;S.clientes.forEach(c=>c.movs.forEach(mv=>{if(mv.tipo==='pago'&&mv.t>=ini&&mv.t<fin)cob+=mv.m}));
   const pb=S.barberos.map((b,bi)=>{const pc=S.com[bi]||0;const x=vs.filter(v=>v.barb===b),t=sm(x);return `\n✂️ ${b}: ${fmt(t)} (${x.length} ${x.length===1?'cliente':'clientes'})\n   Efectivo ${fmt(sm(x,'ef'))} · Transf. ${fmt(sm(x,'tr'))} · Fiado ${fmt(sm(x,'fi'))}${pc?`\n   Le toca (${pc}%): ${fmt(t*pc/100)}\n   Para la barbería: ${fmt(t*(100-pc)/100)}`:''}`}).join('');
   let dias='';if(per!=='hoy'){const dd={};vs.forEach(v=>{const k=dk(v.t);dd[k]=(dd[k]||0)+v.total});dias='\n\nPor día:'+Object.keys(dd).sort().map(k=>{const [y,mo,da]=k.split('-');return `\n${da}/${mo}: ${fmt(dd[k])}`}).join('')}
-  window.open('https://wa.me/?text='+encodeURIComponent(`${per==='hoy'?'Cierre':'Balance'} Los Martínez · ${per==='hoy'?new Date().toLocaleDateString('es-AR'):tit}\nClientes: ${vs.length}\nEfectivo: ${fmt(sm(vs,'ef'))}\nTransferencia: ${fmt(sm(vs,'tr'))}\nFiado: ${fmt(sm(vs,'fi'))}\nCobros de fiado: ${fmt(cob)}\nTOTAL: ${fmt(sm(vs))}\n${pb}${dias}`))}
+  wa((`${per==='hoy'?'Cierre':'Balance'} Los Martínez · ${per==='hoy'?new Date().toLocaleDateString('es-AR'):tit}\nClientes: ${vs.length}\nEfectivo: ${fmt(sm(vs,'ef'))}\nTransferencia: ${fmt(sm(vs,'tr'))}\nFiado: ${fmt(sm(vs,'fi'))}\nCobros de fiado: ${fmt(cob)}\nTOTAL: ${fmt(sm(vs))}\n${pb}${dias}`))}
 function editProd(id){
   const p=id?S.prods.find(x=>x.id===id):{n:'',p:''};
   abrir(`<h3>${id?'Editar':'Nuevo'} producto</h3><input class="f" id="pn" placeholder="Nombre" value="${p.n}"><input class="f" id="pp" type="number" inputmode="numeric" placeholder="Precio $" value="${p.p}">
