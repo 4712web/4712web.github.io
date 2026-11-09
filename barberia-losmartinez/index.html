@@ -1,0 +1,243 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<meta name="theme-color" content="#0A0B10">
+<title>Caja · Barbería Los Martínez</title>
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="icon" href="icon-192.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Los Martínez">
+<style>
+:root{--a:#C99A06;--ink:#0A0B10;--mut:#5B6170;--line:#E4E7EE;--bg:#F4F5F8;--ok:#12A150;--warn:#E8590C}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+body{margin:0;font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;background:var(--bg);color:var(--ink);padding-bottom:84px}
+header{position:sticky;top:0;z-index:5;background:#fff;border-bottom:1px solid var(--line);padding:14px 16px;display:flex;align-items:center;justify-content:space-between}
+header b{font-size:20px;letter-spacing:-.02em}
+header small{color:var(--mut);font-size:13px}
+main{max-width:640px;margin:0 auto;padding:14px 16px}
+nav{position:fixed;bottom:0;left:0;right:0;background:#fff;border-top:1px solid var(--line);display:grid;grid-template-columns:repeat(4,1fr);z-index:6;padding-bottom:env(safe-area-inset-bottom)}
+nav button{border:0;background:none;padding:10px 0 12px;font:600 12px system-ui;color:var(--mut);display:flex;flex-direction:column;align-items:center;gap:4px}
+nav button span{font-size:22px;line-height:1}
+nav button.on{color:var(--a)}
+.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.prod{border:0;background:#fff;border-radius:16px;padding:14px 8px;min-height:86px;font:600 14px system-ui;color:var(--ink);display:flex;flex-direction:column;justify-content:space-between;text-align:center;box-shadow:0 1px 0 var(--line)}
+.prod:active{transform:scale(.96);background:#EEF1FF}
+.prod em{font-style:normal;font-weight:800;color:var(--a);font-size:15px}
+.prod.libre{background:var(--ink);color:#fff}.prod.libre em{color:#fff}
+.search{width:100%;padding:13px 14px;border-radius:14px;border:1px solid var(--line);font-size:16px;margin-bottom:12px;background:#fff}
+.ticket{position:fixed;left:0;right:0;bottom:66px;background:#fff;border-top:1px solid var(--line);box-shadow:0 -10px 30px rgba(20,30,80,.08);z-index:4;max-width:640px;margin:0 auto;border-radius:20px 20px 0 0}
+.ticket .items{max-height:28vh;overflow:auto;padding:6px 16px}
+.it{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--line);font-size:15px}
+.it .n{flex:1}.it .q{display:flex;align-items:center;gap:8px}
+.q button{width:30px;height:30px;border-radius:50%;border:1px solid var(--line);background:#fff;font-size:18px;line-height:1}
+.tot{display:flex;justify-content:space-between;align-items:center;padding:12px 16px}
+.tot b{font-size:28px;letter-spacing:-.02em}
+.btn{border:0;border-radius:14px;padding:15px;font:700 16px system-ui;background:var(--a);color:#fff;width:100%}
+.btn.sec{background:#fff;color:var(--ink);border:1px solid var(--line)}
+.btn.ok{background:var(--ok)}.btn.warn{background:var(--warn)}
+.row{display:flex;gap:10px}
+.card{background:#fff;border-radius:18px;padding:16px;margin-bottom:12px;box-shadow:0 1px 0 var(--line)}
+.big{font-size:34px;font-weight:800;letter-spacing:-.03em}
+.lbl{font-size:12px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--a);margin-bottom:6px}
+.mut{color:var(--mut);font-size:14px}
+.kv{display:flex;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--line);font-size:16px}
+.kv:last-child{border:0}
+.list .li{display:flex;justify-content:space-between;align-items:center;padding:14px 0;border-bottom:1px solid var(--line)}
+.list .li:last-child{border:0}
+.debe{color:var(--warn);font-weight:800}
+.modal{position:fixed;inset:0;background:rgba(10,11,16,.45);display:none;align-items:flex-end;z-index:20}
+.modal.show{display:flex}
+.sheet{background:#fff;width:100%;max-width:640px;margin:0 auto;border-radius:22px 22px 0 0;padding:20px 16px calc(20px + env(safe-area-inset-bottom));max-height:88vh;overflow:auto}
+.sheet h3{margin:0 0 14px;font-size:20px}
+input.f{width:100%;padding:14px;border-radius:14px;border:1px solid var(--line);font-size:18px;margin-bottom:10px}
+.chips{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px}
+.chips button{border:1px solid var(--line);background:#fff;border-radius:999px;padding:10px 14px;font:600 15px system-ui}
+.vuelto{background:#EAF7EF;color:var(--ok);border-radius:14px;padding:14px;font-weight:800;font-size:22px;text-align:center;margin-bottom:12px}
+.empty{text-align:center;color:var(--mut);padding:30px 0}
+.toast{position:fixed;top:70px;left:50%;transform:translateX(-50%);background:var(--ink);color:#fff;padding:10px 18px;border-radius:999px;font-weight:600;opacity:0;transition:.25s;z-index:30;pointer-events:none}
+.toast.show{opacity:1}
+.hide{display:none!important}
+</style>
+</head>
+<body>
+<header style="background:#0A0B10;color:#fff;border:0"><div style="display:flex;align-items:center;gap:10px"><img src="icon-192.png" style="width:40px;height:40px;border-radius:50%"><div><b>Los Martínez</b><br><small id="hoy" style="color:#aaa"></small></div></div><button id="inst" class="hide" onclick="instalar()" style="border:0;background:var(--a);color:#fff;border-radius:999px;padding:9px 14px;font:700 14px system-ui">📲 Instalar</button><small id="brand" style="color:#888">4712web</small></header>
+<main id="main"></main>
+
+<div class="ticket hide" id="ticket">
+  <div class="items" id="items"></div>
+  <div class="tot"><div><div class="mut">Total</div><b id="total">$0</b></div><div class="row" style="width:58%"><button class="btn sec" style="width:40%" onclick="limpiar()">✕</button><button class="btn" onclick="cobrar()">Cobrar</button></div></div>
+</div>
+
+<nav>
+  <button data-v="vender" class="on"><span>🛒</span>Vender</button>
+  <button data-v="fiado"><span>📒</span>Fiado</button>
+  <button data-v="caja"><span>💵</span>Caja</button>
+  <button data-v="prods"><span>🏷️</span>Productos</button>
+</nav>
+
+<div class="modal" id="modal" onclick="if(event.target===this)cerrar()"><div class="sheet" id="sheet"></div></div>
+<div class="toast" id="toast"></div>
+
+<script>
+const $=s=>document.querySelector(s);
+const fmt=n=>'$'+Math.round(n).toLocaleString('es-AR');
+const dk=t=>{const d=new Date(t);return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')};const hoyKey=()=>dk(Date.now());
+const uid=()=>Math.random().toString(36).slice(2,9);
+const KEY='caja-losmartinez';
+const SEED={prods:[
+ ['Corte',0],['Corte + barba',0],['Barba',0],['Corte niño',0],['Color / mechas',0],['Cejas',0],['Cera / pomada',0]
+].map(([n,p])=>({id:uid(),n,p})),ventas:[],clientes:[]};
+let S;
+try{S=JSON.parse(localStorage.getItem(KEY))}catch(e){}
+if(!S||!S.prods)S=JSON.parse(JSON.stringify(SEED));
+const save=()=>{try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}};
+let cart=[],view='vender',q='',per='hoy';
+
+function toast(t){const e=$('#toast');e.textContent=t;e.classList.add('show');setTimeout(()=>e.classList.remove('show'),1600)}
+function abrir(h){$('#sheet').innerHTML=h;$('#modal').classList.add('show')}
+function cerrar(){$('#modal').classList.remove('show')}
+const deuda=c=>c.movs.reduce((s,m)=>s+(m.tipo==='deuda'?m.m:-m.m),0);
+const totalCart=()=>cart.reduce((s,i)=>s+i.p*i.q,0);
+
+document.querySelectorAll('nav button').forEach(b=>b.onclick=()=>{view=b.dataset.v;document.querySelectorAll('nav button').forEach(x=>x.classList.toggle('on',x===b));render()});
+$('#hoy').textContent=new Date().toLocaleDateString('es-AR',{weekday:'long',day:'numeric',month:'long'});
+
+function render(){
+  const m=$('#main');
+  $('#ticket').classList.toggle('hide',!(view==='vender'&&cart.length));
+  document.body.style.paddingBottom=(view==='vender'&&cart.length)?'calc(84px + 34vh)':'84px';
+  if(view==='vender'){
+    const ps=S.prods.filter(p=>p.n.toLowerCase().includes(q.toLowerCase()));
+    m.innerHTML=`<input class="search" placeholder="Buscar…" value="${q}" oninput="q=this.value;renderGrid()"><div class="grid" id="grid"></div>`;
+    renderGrid();
+  }
+  if(view==='fiado'){
+    const cs=[...S.clientes].sort((a,b)=>deuda(b)-deuda(a));
+    const tot=cs.reduce((s,c)=>s+Math.max(0,deuda(c)),0);
+    m.innerHTML=`<div class="card"><div class="lbl">Te deben en total</div><div class="big debe">${fmt(tot)}</div></div>
+    <div class="card list">${cs.length?cs.map(c=>`<div class="li" onclick="verCliente('${c.id}')"><div><b>${c.n}</b><div class="mut">${c.movs.length} movimientos</div></div><div class="${deuda(c)>0?'debe':''}">${fmt(deuda(c))}</div></div>`).join(''):'<div class="empty">Nadie te debe 🙌</div>'}</div>
+    <button class="btn sec" onclick="nuevoCliente()">+ Agregar cliente</button>`;
+  }
+  if(view==='caja'){
+    const now=new Date(),d=hoyKey();
+    const ini={hoy:new Date(now.getFullYear(),now.getMonth(),now.getDate()).getTime(),sem:new Date(now.getFullYear(),now.getMonth(),now.getDate()-6).getTime(),mes:new Date(now.getFullYear(),now.getMonth(),1).getTime()}[per];
+    const vs=S.ventas.filter(v=>v.t>=ini);
+    const sum=md=>vs.filter(v=>v.medio===md).reduce((s,v)=>s+v.total,0);
+    const ef=sum('ef'),tr=sum('tr'),fi=sum('fi');
+    let cob={ef:0,tr:0};S.clientes.forEach(c=>c.movs.forEach(mv=>{if(mv.tipo==='pago'&&mv.t>=ini)cob[mv.medio||'ef']+=mv.m}));
+    const tit={hoy:'Vendido hoy',sem:'Últimos 7 días',mes:'Este mes'}[per];
+    const top={};vs.forEach(v=>v.items.forEach(i=>{top[i.n]=top[i.n]||{q:0,m:0};top[i.n].q+=i.q;top[i.n].m+=i.p*i.q}));
+    const tops=Object.entries(top).sort((a,b)=>b[1].m-a[1].m).slice(0,5);
+    const dias={};if(per!=='hoy')vs.forEach(v=>{const k=dk(v.t);dias[k]=(dias[k]||0)+v.total});
+    const dmax=Math.max(1,...Object.values(dias));
+    const sinResp=!S.ultResp||Date.now()-S.ultResp>7*864e5;
+    m.innerHTML=`${sinResp?`<div class="card" style="background:#FFF4E5" onclick="respaldar()"><b>⚠️ Hace más de 7 días que no guardás una copia</b><div class="mut">Tocá acá para guardarla en tu WhatsApp</div></div>`:''}
+    <div class="chips" style="display:grid;grid-template-columns:repeat(3,1fr)">${['hoy','sem','mes'].map(k=>`<button style="${per===k?'background:var(--a);color:#fff;border-color:var(--a)':''}" onclick="per='${k}';render()">${{hoy:'Hoy',sem:'7 días',mes:'Mes'}[k]}</button>`).join('')}</div>
+    <div class="card"><div class="lbl">${tit}</div><div class="big">${fmt(ef+tr+fi)}</div><div class="mut">${vs.length} ${vs.length===1?'venta':'ventas'}</div></div>
+    <div class="card">
+      <div class="kv"><span>💵 Efectivo</span><b>${fmt(ef)}</b></div>
+      <div class="kv"><span>📲 Transferencia</span><b>${fmt(tr)}</b></div>
+      <div class="kv"><span>📒 Fiado</span><b class="debe">${fmt(fi)}</b></div>
+      <div class="kv"><span>↩️ Cobros de fiado</span><b>${fmt(cob.ef+cob.tr)}</b></div>
+    </div>
+    ${per==='hoy'?`<div class="card"><div class="lbl">Tenés que tener en la caja</div><div class="big" style="color:var(--ok)">${fmt(ef+cob.ef)}</div><div class="mut">Efectivo de ventas + cobros de fiado en efectivo</div></div>`:
+    `<div class="card"><div class="lbl">Por día</div>${Object.entries(dias).sort().map(([k,v])=>{const [y,mo,da]=k.split('-');return `<div style="display:flex;align-items:center;gap:10px;padding:6px 0;font-size:14px"><span style="width:44px" class="mut">${da}/${mo}</span><div style="flex:1;height:12px;background:var(--bg);border-radius:6px;overflow:hidden"><div style="width:${v/dmax*100}%;height:100%;background:var(--a);border-radius:6px"></div></div><b style="width:84px;text-align:right">${fmt(v)}</b></div>`}).join('')||'<div class="empty">Sin ventas</div>'}</div>`}
+    <div class="card list"><div class="lbl">Lo que más vendés</div>${tops.length?tops.map(([n,x],i)=>`<div class="li"><div><b>${i+1}. ${n}</b><div class="mut">${x.q} unidades</div></div><b>${fmt(x.m)}</b></div>`).join(''):'<div class="empty">Todavía no hay ventas</div>'}</div>
+    ${per==='hoy'?`<div class="card list"><div class="lbl">Últimas ventas</div>${vs.length?vs.slice().reverse().slice(0,30).map(v=>`<div class="li"><div><b>${fmt(v.total)}</b><div class="mut">${new Date(v.t).toLocaleTimeString('es-AR',{hour:'2-digit',minute:'2-digit'})} · ${v.items.map(i=>i.q+'× '+i.n).join(', ')}</div></div><div class="mut">${{ef:'Efectivo',tr:'Transf.',fi:'Fiado'}[v.medio]}</div></div>`).join(''):'<div class="empty">Todavía no vendiste nada hoy</div>'}</div>
+    <button class="btn sec" onclick="compartirCierre(${ef},${tr},${fi},${cob.ef+cob.tr},${vs.length})">Mandar cierre por WhatsApp</button>`:''}`;
+  }
+  if(view==='prods'){
+    m.innerHTML=`<div class="row" style="margin-bottom:12px"><button class="btn" onclick="editProd()">+ Agregar</button><button class="btn ok" onclick="subirPrecios()">📈 Subir %</button></div>
+    <div class="card list">${S.prods.map(p=>`<div class="li" onclick="editProd('${p.id}')"><b>${p.n}</b><span>${fmt(p.p)}</span></div>`).join('')}</div>
+    <div class="card"><div class="lbl">Copia de seguridad</div><div class="mut" style="margin-bottom:12px">Guardá una copia de tus ventas, fiados y productos en tu WhatsApp. Si cambiás o perdés el celu, la recuperás.${S.ultResp?'<br>Última copia: '+new Date(S.ultResp).toLocaleDateString('es-AR'):''}</div><div class="row"><button class="btn" onclick="respaldar()">💾 Guardar copia</button><button class="btn sec" onclick="$('#fimp').click()">📂 Recuperar</button></div><input type="file" id="fimp" accept=".json,application/json" class="hide" onchange="recuperar(this.files[0])"></div>`;
+  }
+}
+function renderGrid(){
+  const ps=S.prods.filter(p=>p.n.toLowerCase().includes(q.toLowerCase()));
+  $('#grid').innerHTML=`<button class="prod libre" onclick="montoLibre()">Monto libre<em>$ ✎</em></button>`+ps.map(p=>`<button class="prod" onclick="add('${p.id}')">${p.n}<em>${fmt(p.p)}</em></button>`).join('');
+}
+function add(id){const p=S.prods.find(x=>x.id===id);const i=cart.find(x=>x.id===id);i?i.q++:cart.push({id,n:p.n,p:p.p,q:1});if(navigator.vibrate)navigator.vibrate(15);drawCart()}
+function chq(k,d){const i=cart[k];i.q+=d;if(i.q<=0)cart.splice(k,1);drawCart()}
+function limpiar(){cart=[];drawCart()}
+function drawCart(){
+  $('#items').innerHTML=cart.map((i,k)=>`<div class="it"><span class="n">${i.n}</span><span class="q"><button onclick="chq(${k},-1)">−</button>${i.q}<button onclick="chq(${k},1)">+</button></span><b style="width:80px;text-align:right">${fmt(i.p*i.q)}</b></div>`).join('');
+  $('#total').textContent=fmt(totalCart());
+  const show=view==='vender'&&cart.length;$('#ticket').classList.toggle('hide',!show);
+  document.body.style.paddingBottom=show?'calc(84px + 34vh)':'84px';
+}
+function montoLibre(){
+  abrir(`<h3>Monto libre</h3><input class="f" id="ml" type="number" inputmode="numeric" placeholder="$ 0"><input class="f" id="mn" placeholder="Qué es (opcional)"><button class="btn" onclick="const v=+$('#ml').value;if(v>0){cart.push({id:uid(),n:$('#mn').value||'Varios',p:v,q:1});drawCart();cerrar()}">Agregar</button>`);
+  setTimeout(()=>$('#ml').focus(),100);
+}
+function cobrar(){
+  const t=totalCart();
+  abrir(`<h3>Cobrar ${fmt(t)}</h3>
+  <div class="lbl">¿Con cuánto paga?</div>
+  <div class="chips">${[...new Set([t,Math.ceil(t/1000)*1000,Math.ceil(t/5000)*5000,Math.ceil(t/10000)*10000,20000].filter(x=>x>=t))].slice(0,5).map(x=>`<button onclick="$('#paga').value=${x};vuelto(${t})">${fmt(x)}</button>`).join('')}</div>
+  <input class="f" id="paga" type="number" inputmode="numeric" placeholder="Paga con $" oninput="vuelto(${t})">
+  <div class="vuelto hide" id="vu"></div>
+  <button class="btn ok" style="margin-bottom:10px" onclick="finVenta('ef')">💵 Efectivo</button>
+  <button class="btn" style="margin-bottom:10px" onclick="finVenta('tr')">📲 Transferencia</button>
+  <button class="btn warn" onclick="elegirFiado()">📒 Fiado</button>`);
+}
+function vuelto(t){const p=+$('#paga').value,e=$('#vu');if(p>=t){e.classList.remove('hide');e.textContent='Vuelto: '+fmt(p-t)}else e.classList.add('hide')}
+function finVenta(medio,cid){
+  const t=totalCart(),v={id:uid(),t:Date.now(),d:hoyKey(),items:cart.map(({n,p,q})=>({n,p,q})),total:t,medio};
+  if(cid){const c=S.clientes.find(x=>x.id===cid);v.cli=c.n;c.movs.push({t:Date.now(),tipo:'deuda',m:t,det:v.items.map(i=>i.q+'× '+i.n).join(', ')})}
+  S.ventas.push(v);save();cart=[];cerrar();drawCart();toast('Venta guardada ✓');
+}
+function elegirFiado(){
+  abrir(`<h3>¿A quién se lo fiás?</h3><div class="list">${S.clientes.map(c=>`<div class="li" onclick="finVenta('fi','${c.id}')"><b>${c.n}</b><span class="debe">${fmt(deuda(c))}</span></div>`).join('')}</div>
+  <input class="f" id="nc" placeholder="Nombre de cliente nuevo" style="margin-top:12px"><button class="btn warn" onclick="const n=$('#nc').value.trim();if(n){const c={id:uid(),n,movs:[]};S.clientes.push(c);finVenta('fi',c.id)}">Fiar a cliente nuevo</button>`);
+}
+function nuevoCliente(){abrir(`<h3>Nuevo cliente</h3><input class="f" id="nc" placeholder="Nombre"><button class="btn" onclick="const n=$('#nc').value.trim();if(n){S.clientes.push({id:uid(),n,movs:[]});save();cerrar();render()}">Guardar</button>`);setTimeout(()=>$('#nc').focus(),100)}
+function verCliente(id){
+  const c=S.clientes.find(x=>x.id===id),d=deuda(c);
+  abrir(`<h3>${c.n}</h3><div class="card" style="background:var(--bg)"><div class="lbl">Debe</div><div class="big ${d>0?'debe':''}">${fmt(d)}</div></div>
+  <input class="f" id="pm" type="number" inputmode="numeric" placeholder="¿Cuánto paga? $">
+  <div class="row" style="margin-bottom:14px"><button class="btn ok" onclick="pago('${id}','ef')">💵 Efectivo</button><button class="btn" onclick="pago('${id}','tr')">📲 Transf.</button></div>
+  ${d>0?`<button class="btn sec" style="margin-bottom:14px" onclick="$('#pm').value=${d}">Paga todo (${fmt(d)})</button>`:''}
+  <div class="list">${c.movs.slice().reverse().map(mv=>`<div class="li"><div><b>${mv.tipo==='deuda'?'Fiado':'Pagó'}</b><div class="mut">${new Date(mv.t).toLocaleDateString('es-AR')} ${mv.det?'· '+mv.det:''}</div></div><b class="${mv.tipo==='deuda'?'debe':''}" style="${mv.tipo==='pago'?'color:var(--ok)':''}">${mv.tipo==='deuda'?'+':'−'}${fmt(mv.m)}</b></div>`).join('')||'<div class="empty">Sin movimientos</div>'}</div>
+  <button class="btn sec" style="margin-top:12px" onclick="recordar('${id}')">Recordarle por WhatsApp</button>`);
+}
+function pago(id,medio){const v=+$('#pm').value;if(!(v>0))return;const c=S.clientes.find(x=>x.id===id);c.movs.push({t:Date.now(),tipo:'pago',m:v,medio});save();cerrar();render();toast('Pago anotado ✓')}
+function recordar(id){const c=S.clientes.find(x=>x.id===id);window.open('https://wa.me/?text='+encodeURIComponent(`Hola ${c.n}! Te recuerdo que en el almacén quedó un saldo de ${fmt(deuda(c))}. ¡Gracias!`))}
+function compartirCierre(ef,tr,fi,cob,n){window.open('https://wa.me/?text='+encodeURIComponent(`Cierre ${new Date().toLocaleDateString('es-AR')}\nVentas: ${n}\nEfectivo: ${fmt(ef)}\nTransferencia: ${fmt(tr)}\nFiado: ${fmt(fi)}\nCobros de fiado: ${fmt(cob)}\nTOTAL: ${fmt(ef+tr+fi)}`))}
+function editProd(id){
+  const p=id?S.prods.find(x=>x.id===id):{n:'',p:''};
+  abrir(`<h3>${id?'Editar':'Nuevo'} producto</h3><input class="f" id="pn" placeholder="Nombre" value="${p.n}"><input class="f" id="pp" type="number" inputmode="numeric" placeholder="Precio $" value="${p.p}">
+  <button class="btn" onclick="guardarProd('${id||''}')">Guardar</button>${id?`<button class="btn sec" style="margin-top:10px;color:#c00" onclick="S.prods=S.prods.filter(x=>x.id!=='${id}');save();cerrar();render()">Borrar</button>`:''}`);
+}
+function guardarProd(id){const n=$('#pn').value.trim(),p=+$('#pp').value;if(!n||!(p>0))return;if(id){const x=S.prods.find(x=>x.id===id);x.n=n;x.p=p}else S.prods.push({id:uid(),n,p});save();cerrar();render()}
+function subirPrecios(){
+  abrir(`<h3>Subir todos los precios</h3><div class="mut" style="margin-bottom:12px">Se aplica a los ${S.prods.length} productos y se redondea a $10.</div>
+  <div class="chips">${[5,10,15,20].map(x=>`<button onclick="$('#pc').value=${x};prevPc()">+${x}%</button>`).join('')}</div>
+  <input class="f" id="pc" type="number" inputmode="decimal" placeholder="% de aumento" oninput="prevPc()">
+  <div class="mut" id="pv" style="margin-bottom:12px"></div>
+  <button class="btn ok" onclick="aplicarPc()">Aplicar aumento</button>`);
+}
+const nuevoP=(p,pc)=>Math.round(p*(1+pc/100)/10)*10;
+function prevPc(){const pc=+$('#pc').value,e=$('#pv');if(!(pc>0)){e.textContent='';return}const x=S.prods[0];e.textContent=x?`Ej: ${x.n} pasa de ${fmt(x.p)} a ${fmt(nuevoP(x.p,pc))}`:''}
+function aplicarPc(){const pc=+$('#pc').value;if(!(pc>0))return;S.prods.forEach(x=>x.p=nuevoP(x.p,pc));save();cerrar();render();toast('Precios +'+pc+'% ✓')}
+async function respaldar(){
+  const name='caja-copia-'+new Date().toLocaleDateString('es-AR').replaceAll('/','-')+'.json';
+  const blob=new Blob([JSON.stringify(S)],{type:'application/json'});
+  const file=new File([blob],name,{type:'application/json'});
+  try{if(navigator.canShare&&navigator.canShare({files:[file]})){await navigator.share({files:[file],title:'Copia de la caja',text:'Copia de seguridad de la caja'});S.ultResp=Date.now();save();render();toast('Copia guardada ✓');return}}catch(e){if(e.name==='AbortError')return}
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=name;a.click();S.ultResp=Date.now();save();render();toast('Copia descargada ✓');
+}
+function recuperar(f){if(!f)return;const r=new FileReader();r.onload=()=>{try{const x=JSON.parse(r.result);if(!x.prods||!x.ventas||!x.clientes)throw 0;if(confirm('¿Reemplazar los datos de este celu por la copia?')){S=x;save();render();toast('Copia recuperada ✓')}}catch(e){toast('Ese archivo no es una copia válida')}};r.readAsText(f)}
+let dp=null;
+const isIOS=/iphone|ipad|ipod/i.test(navigator.userAgent),standalone=matchMedia('(display-mode: standalone)').matches||navigator.standalone;
+if(!standalone){if(isIOS){$('#inst').classList.remove('hide');$('#brand').classList.add('hide')}}
+addEventListener('beforeinstallprompt',e=>{e.preventDefault();dp=e;$('#inst').classList.remove('hide');$('#brand').classList.add('hide')});
+addEventListener('appinstalled',()=>{$('#inst').classList.add('hide');$('#brand').classList.remove('hide');toast('App instalada ✓')});
+function instalar(){if(dp){dp.prompt();dp=null;return}abrir(`<h3>Instalar en iPhone</h3><div class="kv"><span>1. Tocá el botón Compartir</span><b>⬆️</b></div><div class="kv"><span>2. "Agregar a pantalla de inicio"</span><b>➕</b></div><div class="kv"><span>3. Tocá "Agregar"</span><b>✓</b></div><button class="btn" style="margin-top:14px" onclick="cerrar()">Listo</button>`)}
+if('serviceWorker' in navigator)navigator.serviceWorker.register('sw.js').catch(()=>{});
+render();
+</script>
+</body>
+</html>
