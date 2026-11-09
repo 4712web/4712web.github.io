@@ -138,20 +138,19 @@ function render(){
     m.innerHTML=`${sinResp?`<div class="card" style="background:#FFF4E5" onclick="respaldar()"><b>⚠️ Hace más de 7 días que no guardás una copia</b><div class="mut">Tocá acá para guardarla en tu WhatsApp</div></div>`:''}
     <div class="chips" style="display:grid;grid-template-columns:repeat(4,1fr)">${['hoy','sem','ant','mes'].map(k=>`<button style="${per===k?'background:var(--a);color:#fff;border-color:var(--a)':''}" onclick="per='${k}';render()">${{hoy:'Hoy',sem:'Semana',ant:'Sem. pasada',mes:'Mes'}[k]}</button>`).join('')}</div>
     <div class="card"><div class="lbl">${tit}</div><div class="big">${fmt(ef+tr+fi)}</div><div class="mut">${vs.length} ${vs.length===1?'venta':'ventas'}</div></div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px"><div class="card" style="margin:0;background:#EAF7EF"><div class="lbl" style="color:var(--ok)">💵 Efectivo</div><div style="font-size:26px;font-weight:800">${fmt(ef+cob.ef)}</div></div><div class="card" style="margin:0;background:#E8F3FF"><div class="lbl" style="color:#0a66c2">📲 Mercado Pago</div><div style="font-size:26px;font-weight:800">${fmt(tr+cob.tr)}</div></div></div>
     <div class="card">
-      <div class="kv"><span>💵 Efectivo</span><b>${fmt(ef)}</b></div>
-      <div class="kv"><span>📲 Transferencia</span><b>${fmt(tr)}</b></div>
       <div class="kv"><span>📒 Fiado</span><b class="debe">${fmt(fi)}</b></div>
       <div class="kv"><span>↩️ Cobros de fiado</span><b>${fmt(cob.ef+cob.tr)}</b></div>
     </div>
     ${S.barberos.map((bn,bi)=>{const pc=S.com[bi]||0;const bv=vs.filter(v=>v.barb===bn);const bt=bv.reduce((s,v)=>s+v.total,0);const sv={};bv.forEach(v=>v.items.forEach(i=>{sv[i.n]=(sv[i.n]||0)+i.q}));const bs=md=>bv.filter(v=>v.medio===md).reduce((s,v)=>s+v.total,0);return `<div class="card"><div class="lbl">✂️ ${bn}</div><div style="display:flex;justify-content:space-between;align-items:baseline"><div class="big">${fmt(bt)}</div><div class="mut">${bv.length} ${bv.length===1?'cliente':'clientes'}</div></div>
-      <div class="kv"><span>💵 Efectivo</span><b>${fmt(bs('ef'))}</b></div><div class="kv"><span>📲 Transferencia</span><b>${fmt(bs('tr'))}</b></div><div class="kv"><span>📒 Fiado</span><b class="debe">${fmt(bs('fi'))}</b></div>
+      <div class="kv"><span>💵 Efectivo</span><b>${fmt(bs('ef'))}</b></div><div class="kv"><span>📲 Mercado Pago</span><b>${fmt(bs('tr'))}</b></div><div class="kv"><span>📒 Fiado</span><b class="debe">${fmt(bs('fi'))}</b></div>
       ${pc?`<div style="background:var(--bg);border-radius:14px;padding:12px 14px;margin-top:10px"><div class="kv"><span>💈 Le toca a ${bn} (${pc}%)</span><b style="color:var(--ok)">${fmt(bt*pc/100)}</b></div><div class="kv"><span>🏠 Para la barbería (${100-pc}%)</span><b>${fmt(bt*(100-pc)/100)}</b></div></div>`:''}
       ${Object.keys(sv).length?`<div class="mut" style="margin-top:8px">${Object.entries(sv).sort((a,b)=>b[1]-a[1]).map(([n,q])=>q+'× '+n).join(' · ')}</div>`:''}</div>`}).join('')}
     ${per==='hoy'?`<div class="card"><div class="lbl">Tenés que tener en la caja</div><div class="big" style="color:var(--ok)">${fmt(ef+cob.ef)}</div><div class="mut">Efectivo de ventas + cobros de fiado en efectivo</div></div>`:
     `<div class="card"><div class="lbl">Por día</div>${Object.entries(dias).sort().map(([k,v])=>{const [y,mo,da]=k.split('-');return `<div style="display:flex;align-items:center;gap:10px;padding:6px 0;font-size:14px"><span style="width:44px" class="mut">${da}/${mo}</span><div style="flex:1;height:12px;background:var(--bg);border-radius:6px;overflow:hidden"><div style="width:${v/dmax*100}%;height:100%;background:var(--a);border-radius:6px"></div></div><b style="width:84px;text-align:right">${fmt(v)}</b></div>`}).join('')||'<div class="empty">Sin ventas</div>'}</div>`}
     <div class="card list"><div class="lbl">Lo que más vendés</div>${tops.length?tops.map(([n,x],i)=>`<div class="li"><div><b>${i+1}. ${n}</b><div class="mut">${x.q} ${x.q===1?'vez':'veces'}</div></div><b>${fmt(x.m)}</b></div>`).join(''):'<div class="empty">Todavía no hay ventas</div>'}</div>
-    <div class="card list"><div class="lbl">${per==='hoy'?'Ventas de hoy':'Ventas'} · tocá una para corregirla</div>${vs.length?vs.slice().reverse().slice(0,60).map(v=>`<div class="li" onclick="editVenta('${v.id}')"><div><b>${fmt(v.total)}</b><div class="mut">${per==='hoy'?'':new Date(v.t).toLocaleDateString('es-AR',{day:'numeric',month:'numeric'})+' '}${new Date(v.t).toLocaleTimeString('es-AR',{hour:'2-digit',minute:'2-digit'})}${v.cli?' · 👤 '+v.cli:''}${v.barb?' · ✂️ '+v.barb:''} · ${v.items.map(i=>i.q+'× '+i.n).join(', ')}</div></div><div class="mut">${{ef:'Efectivo',tr:'Transf.',fi:'Fiado'}[v.medio]} ✎</div></div>`).join(''):'<div class="empty">Sin ventas</div>'}</div>
+    <div class="card list"><div class="lbl">${per==='hoy'?'Ventas de hoy':'Ventas'} · tocá una para corregirla</div>${vs.length?vs.slice().reverse().slice(0,60).map(v=>`<div class="li" onclick="editVenta('${v.id}')"><div><b>${fmt(v.total)}</b><div class="mut">${per==='hoy'?'':new Date(v.t).toLocaleDateString('es-AR',{day:'numeric',month:'numeric'})+' '}${new Date(v.t).toLocaleTimeString('es-AR',{hour:'2-digit',minute:'2-digit'})}${v.cli?' · 👤 '+v.cli:''}${v.barb?' · ✂️ '+v.barb:''} · ${v.items.map(i=>i.q+'× '+i.n).join(', ')}</div></div><div class="mut">${{ef:'Efectivo',tr:'M. Pago',fi:'Fiado'}[v.medio]} ✎</div></div>`).join(''):'<div class="empty">Sin ventas</div>'}</div>
     <button class="btn sec" onclick="compartirCierre()">${per==='hoy'?'Mandar cierre por WhatsApp':'Mandar balance por WhatsApp'}</button>`;
   }
   if(view==='prods'){
@@ -159,7 +158,7 @@ function render(){
     <div class="card list">${S.prods.map(p=>`<div class="li" onclick="editProd('${p.id}')"><b>${p.n}</b><span>${fmt(p.p)}</span></div>`).join('')}</div>
     <div class="card"><div class="lbl">Barberos</div>${S.barberos.map((b,i)=>`<div class="row"><input class="f" style="flex:2" value="${b}" onchange="if(this.value.trim()){S.barberos[${i}]=this.value.trim();save();toast('Guardado ✓')}"><input class="f" style="flex:1" type="number" inputmode="numeric" value="${S.com[i]||0}" onchange="S.com[${i}]=Math.max(0,Math.min(100,+this.value||0));save();toast('Comisión guardada ✓')"></div>`).join('')}<div class="mut">Nombre y % de comisión (0 = dueño)</div></div>
     <button class="btn sec" style="margin-bottom:12px" onclick="cambiarClave()">🔒 Cambiar clave</button>
-    <div class="mut" style="text-align:center;margin:-4px 0 12px">Versión 9 · 4712web</div>
+    <div class="mut" style="text-align:center;margin:-4px 0 12px">Versión 10 · 4712web</div>
     <div class="card"><div class="lbl">Copia de seguridad</div><div class="mut" style="margin-bottom:12px">Guardá una copia de tus ventas, fiados y productos en tu WhatsApp. Si cambiás o perdés el celu, la recuperás.${S.ultResp?'<br>Última copia: '+new Date(S.ultResp).toLocaleDateString('es-AR'):''}</div><div class="row"><button class="btn" onclick="respaldar()">💾 Guardar copia</button><button class="btn sec" onclick="$('#fimp').click()">📂 Recuperar</button></div><input type="file" id="fimp" accept=".json,application/json" class="hide" onchange="recuperar(this.files[0])"></div>`;
   }
 }
@@ -190,7 +189,7 @@ function cobrar(){
   <input class="f" id="paga" type="number" inputmode="numeric" placeholder="Paga con $" oninput="vuelto(${t})">
   <div class="vuelto hide" id="vu"></div>
   <button class="btn ok" style="margin-bottom:10px" onclick="finVenta('ef')">💵 Efectivo</button>
-  <button class="btn" style="margin-bottom:10px" onclick="finVenta('tr')">📲 Transferencia</button>
+  <button class="btn" style="margin-bottom:10px" onclick="finVenta('tr')">📲 Mercado Pago</button>
   <button class="btn warn" onclick="elegirFiado()">📒 Fiado</button>`);
 }
 function elegirB(i){barb=i;document.querySelectorAll('#bch button').forEach((b,k)=>{b.style.background=k===i?'var(--a)':'#fff';b.style.color=k===i?'#fff':'';b.style.borderColor=k===i?'var(--a)':''})}
@@ -210,7 +209,7 @@ function verCliente(id){
   const c=S.clientes.find(x=>x.id===id),d=deuda(c);
   abrir(`<h3>${c.n}</h3><div class="card" style="background:var(--bg)"><div class="lbl">Debe</div><div class="big ${d>0?'debe':''}">${fmt(d)}</div></div>
   <input class="f" id="pm" type="number" inputmode="numeric" placeholder="¿Cuánto paga? $">
-  <div class="row" style="margin-bottom:14px"><button class="btn ok" onclick="pago('${id}','ef')">💵 Efectivo</button><button class="btn" onclick="pago('${id}','tr')">📲 Transf.</button></div>
+  <div class="row" style="margin-bottom:14px"><button class="btn ok" onclick="pago('${id}','ef')">💵 Efectivo</button><button class="btn" onclick="pago('${id}','tr')">📲 M. Pago</button></div>
   ${d>0?`<button class="btn sec" style="margin-bottom:14px" onclick="$('#pm').value=${d}">Paga todo (${fmt(d)})</button>`:''}
   <div class="list">${c.movs.slice().reverse().map(mv=>`<div class="li"><div><b>${mv.tipo==='deuda'?'Fiado':'Pagó'}</b><div class="mut">${new Date(mv.t).toLocaleDateString('es-AR')} ${mv.det?'· '+mv.det:''}</div></div><b class="${mv.tipo==='deuda'?'debe':''}" style="${mv.tipo==='pago'?'color:var(--ok)':''}">${mv.tipo==='deuda'?'+':'−'}${fmt(mv.m)}</b></div>`).join('')||'<div class="empty">Sin movimientos</div>'}</div>
   <button class="btn sec" style="margin-top:12px" onclick="recordar('${id}')">Recordarle por WhatsApp</button>`);
@@ -231,7 +230,7 @@ function editVenta(id){
   <div class="lbl">Monto</div><input class="f" id="evM" type="number" inputmode="numeric" value="${v.total}">
   <div class="lbl">¿Quién lo hizo?</div><div class="chips" id="evB" style="display:grid;grid-template-columns:1fr 1fr">${S.barberos.map(b=>`<button data-b="${b}" onclick="_ev.barb='${b}';pintarEv()">✂️ ${b}</button>`).join('')}</div>
   <div class="lbl">Cliente</div><input class="f" id="evC" value="${v.cli||''}" placeholder="Nombre del cliente" ${v.medio==='fi'?'disabled':''}>
-  <div class="lbl">Cómo pagó</div>${v.medio==='fi'?'<div class="mut" style="margin-bottom:12px">📒 Fiado (para cambiarlo, borrá la venta y cargala de nuevo)</div>':`<div class="chips" id="evP" style="display:grid;grid-template-columns:1fr 1fr">${[['ef','💵 Efectivo'],['tr','📲 Transf.']].map(([k,t])=>`<button data-p="${k}" onclick="_ev.medio='${k}';pintarEv()">${t}</button>`).join('')}</div>`}
+  <div class="lbl">Cómo pagó</div>${v.medio==='fi'?'<div class="mut" style="margin-bottom:12px">📒 Fiado (para cambiarlo, borrá la venta y cargala de nuevo)</div>':`<div class="chips" id="evP" style="display:grid;grid-template-columns:1fr 1fr">${[['ef','💵 Efectivo'],['tr','📲 M. Pago']].map(([k,t])=>`<button data-p="${k}" onclick="_ev.medio='${k}';pintarEv()">${t}</button>`).join('')}</div>`}
   <button class="btn" style="margin-bottom:10px" onclick="guardarEv('${id}')">Guardar cambios</button>
   <button class="btn sec" style="color:#c00" onclick="borrarVenta('${id}')">🗑 Borrar venta</button>`);
   pintarEv();
@@ -249,9 +248,9 @@ function rango(k){const n=new Date(),y=n.getFullYear(),m=n.getMonth(),d=n.getDat
   return[new Date(y,m,1).getTime(),Infinity,'Este mes'];}
 function compartirCierre(){const [ini,fin,tit]=rango(per);const vs=S.ventas.filter(v=>v.t>=ini&&v.t<fin);const sm=(a,md)=>a.filter(v=>!md||v.medio===md).reduce((s,v)=>s+v.total,0);
   let cob=0;S.clientes.forEach(c=>c.movs.forEach(mv=>{if(mv.tipo==='pago'&&mv.t>=ini&&mv.t<fin)cob+=mv.m}));
-  const pb=S.barberos.map((b,bi)=>{const pc=S.com[bi]||0;const x=vs.filter(v=>v.barb===b),t=sm(x);return `\n✂️ ${b}: ${fmt(t)} (${x.length} ${x.length===1?'cliente':'clientes'})\n   Efectivo ${fmt(sm(x,'ef'))} · Transf. ${fmt(sm(x,'tr'))} · Fiado ${fmt(sm(x,'fi'))}${pc?`\n   Le toca (${pc}%): ${fmt(t*pc/100)}\n   Para la barbería: ${fmt(t*(100-pc)/100)}`:''}`}).join('');
+  const pb=S.barberos.map((b,bi)=>{const pc=S.com[bi]||0;const x=vs.filter(v=>v.barb===b),t=sm(x);return `\n✂️ ${b}: ${fmt(t)} (${x.length} ${x.length===1?'cliente':'clientes'})\n   Efectivo ${fmt(sm(x,'ef'))} · M. Pago ${fmt(sm(x,'tr'))} · Fiado ${fmt(sm(x,'fi'))}${pc?`\n   Le toca (${pc}%): ${fmt(t*pc/100)}\n   Para la barbería: ${fmt(t*(100-pc)/100)}`:''}`}).join('');
   let dias='';if(per!=='hoy'){const dd={};vs.forEach(v=>{const k=dk(v.t);dd[k]=(dd[k]||0)+v.total});dias='\n\nPor día:'+Object.keys(dd).sort().map(k=>{const [y,mo,da]=k.split('-');return `\n${da}/${mo}: ${fmt(dd[k])}`}).join('')}
-  wa((`${per==='hoy'?'Cierre':'Balance'} Los Martínez · ${per==='hoy'?new Date().toLocaleDateString('es-AR'):tit}\nClientes: ${vs.length}\nEfectivo: ${fmt(sm(vs,'ef'))}\nTransferencia: ${fmt(sm(vs,'tr'))}\nFiado: ${fmt(sm(vs,'fi'))}\nCobros de fiado: ${fmt(cob)}\nTOTAL: ${fmt(sm(vs))}\n${pb}${dias}`))}
+  wa((`${per==='hoy'?'Cierre':'Balance'} Los Martínez · ${per==='hoy'?new Date().toLocaleDateString('es-AR'):tit}\nClientes: ${vs.length}\nEfectivo: ${fmt(sm(vs,'ef'))}\nMercado Pago: ${fmt(sm(vs,'tr'))}\nFiado: ${fmt(sm(vs,'fi'))}\nCobros de fiado: ${fmt(cob)}\nTOTAL: ${fmt(sm(vs))}\n${pb}${dias}`))}
 function editProd(id){
   const p=id?S.prods.find(x=>x.id===id):{n:'',p:''};
   abrir(`<h3>${id?'Editar':'Nuevo'} producto</h3><input class="f" id="pn" placeholder="Nombre" value="${p.n}"><input class="f" id="pp" type="number" inputmode="numeric" placeholder="Precio $" value="${p.p}">
