@@ -87,12 +87,13 @@ const fmt=n=>'$'+Math.round(n).toLocaleString('es-AR');
 const dk=t=>{const d=new Date(t);return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')};const hoyKey=()=>dk(Date.now());
 const uid=()=>Math.random().toString(36).slice(2,9);
 const KEY='caja-losmartinez';
+const PRECIOS=[['Corte',13000],['Corte + barba',14000],['Barba',10000]];
 const SEED={prods:[
- ['Corte',0],['Corte + barba',0],['Barba',0],['Corte niño',0],['Color / mechas',0],['Cejas',0],['Cera / pomada',0]
+ ...PRECIOS
 ].map(([n,p])=>({id:uid(),n,p})),barberos:['Leandro','Junior'],com:[0,60],ventas:[],clientes:[]};
 let S;
 try{S=JSON.parse(localStorage.getItem(KEY))}catch(e){}
-if(!S||!S.prods)S=JSON.parse(JSON.stringify(SEED));if(!S.barberos)S.barberos=['Leandro','Junior'];if(!S.com)S.com=[0,60];if(!S.ultResp)S.ultResp=Date.now();let barb=null;
+if(!S||!S.prods)S=JSON.parse(JSON.stringify(SEED));if(!S.barberos)S.barberos=['Leandro','Junior'];if(!S.com)S.com=[0,60];if(S.pv!==1){S.prods=PRECIOS.map(([n,p])=>{const o=S.prods.find(x=>x.n===n);return {id:o?o.id:uid(),n,p}});S.pv=1;try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}}if(!S.ultResp)S.ultResp=Date.now();let barb=null;
 const save=()=>{try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}};
 let cart=[],view='vender',q='',per='hoy';
 
