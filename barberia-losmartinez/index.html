@@ -159,6 +159,7 @@ function render(){
     <div class="card list">${S.prods.map(p=>`<div class="li" onclick="editProd('${p.id}')"><b>${p.n}</b><span>${fmt(p.p)}</span></div>`).join('')}</div>
     <div class="card"><div class="lbl">Barberos</div>${S.barberos.map((b,i)=>`<div class="row"><input class="f" style="flex:2" value="${b}" onchange="if(this.value.trim()){S.barberos[${i}]=this.value.trim();save();toast('Guardado ✓')}"><input class="f" style="flex:1" type="number" inputmode="numeric" value="${S.com[i]||0}" onchange="S.com[${i}]=Math.max(0,Math.min(100,+this.value||0));save();toast('Comisión guardada ✓')"></div>`).join('')}<div class="mut">Nombre y % de comisión (0 = dueño)</div></div>
     <button class="btn sec" style="margin-bottom:12px" onclick="cambiarClave()">🔒 Cambiar clave</button>
+    <div class="mut" style="text-align:center;margin:-4px 0 12px">Versión 8 · 4712web</div>
     <div class="card"><div class="lbl">Copia de seguridad</div><div class="mut" style="margin-bottom:12px">Guardá una copia de tus ventas, fiados y productos en tu WhatsApp. Si cambiás o perdés el celu, la recuperás.${S.ultResp?'<br>Última copia: '+new Date(S.ultResp).toLocaleDateString('es-AR'):''}</div><div class="row"><button class="btn" onclick="respaldar()">💾 Guardar copia</button><button class="btn sec" onclick="$('#fimp').click()">📂 Recuperar</button></div><input type="file" id="fimp" accept=".json,application/json" class="hide" onchange="recuperar(this.files[0])"></div>`;
   }
 }
@@ -263,7 +264,7 @@ if(!standalone){if(isIOS){$('#inst').classList.remove('hide');$('#brand').classL
 addEventListener('beforeinstallprompt',e=>{e.preventDefault();dp=e;$('#inst').classList.remove('hide');$('#brand').classList.add('hide')});
 addEventListener('appinstalled',()=>{$('#inst').classList.add('hide');$('#brand').classList.remove('hide');toast('App instalada ✓')});
 function instalar(){if(dp){dp.prompt();dp=null;return}abrir(`<h3>Instalar en iPhone</h3><div class="kv"><span>1. Tocá el botón Compartir</span><b>⬆️</b></div><div class="kv"><span>2. "Agregar a pantalla de inicio"</span><b>➕</b></div><div class="kv"><span>3. Tocá "Agregar"</span><b>✓</b></div><button class="btn" style="margin-top:14px" onclick="cerrar()">Listo</button>`)}
-if('serviceWorker' in navigator)navigator.serviceWorker.register('sw.js').catch(()=>{});
+if('serviceWorker' in navigator){const had=!!navigator.serviceWorker.controller;navigator.serviceWorker.register('sw.js',{updateViaCache:'none'}).then(r=>r.update()).catch(()=>{});let rl=false;navigator.serviceWorker.addEventListener('controllerchange',()=>{if(had&&!rl){rl=true;location.reload()}})}
 render();
 </script>
 <div id="lock" style="position:fixed;inset:0;z-index:50;background:#0A0B10;color:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;padding:20px">
