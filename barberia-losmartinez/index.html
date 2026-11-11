@@ -101,6 +101,8 @@ function toast(t){const e=$('#toast');e.textContent=t;e.classList.add('show');se
 function abrir(h){$('#sheet').innerHTML=h;$('#modal').classList.add('show')}
 function cerrar(){$('#modal').classList.remove('show')}
 const deuda=c=>c.movs.reduce((s,m)=>s+(m.tipo==='deuda'?m.m:-m.m),0);
+const amt=(v,md)=>{const pr=v.medio==='fi'?0:(v.prop||0);if(!md)return v.total;if(md==='fi')return v.medio==='fi'?v.total:0;if(v.medio==='mx')return md==='ef'?(v.pe||0):(v.pt||0);return v.medio===md?v.total+pr:0};
+const propOf=(v,md)=>{if(!v.prop||v.medio==='fi')return 0;if(!md)return v.prop;if(v.medio==='mx'){const tt=(v.pe||0)+(v.pt||0)||1;return Math.round(v.prop*((md==='ef'?v.pe:v.pt)||0)/tt)}return v.medio===md?v.prop:0};
 const totalCart=()=>cart.reduce((s,i)=>s+i.p*i.q,0);
 
 document.querySelectorAll('nav button').forEach(b=>b.onclick=()=>{view=b.dataset.v;document.querySelectorAll('nav button').forEach(x=>x.classList.toggle('on',x===b));render()});
@@ -126,7 +128,7 @@ function render(){
     const now=new Date(),d=hoyKey();
     const [ini,fin]=rango(per);
     const vs=S.ventas.filter(v=>v.t>=ini&&v.t<fin);
-    const sum=md=>vs.filter(v=>v.medio===md).reduce((s,v)=>s+v.total,0);
+    const sum=md=>vs.reduce((s,v)=>s+amt(v,md),0);const vt=vs.reduce((s,v)=>s+v.total,0),props=vs.reduce((s,v)=>s+propOf(v),0),propE=vs.reduce((s,v)=>s+propOf(v,'ef'),0);
     const ef=sum('ef'),tr=sum('tr'),fi=sum('fi');
     let cob={ef:0,tr:0};S.clientes.forEach(c=>c.movs.forEach(mv=>{if(mv.tipo==='pago'&&mv.t>=ini&&mv.t<fin)cob[mv.medio||'ef']+=mv.m}));
     const tit=rango(per)[2];
@@ -137,19 +139,20 @@ function render(){
     const sinResp=!S.ultResp||Date.now()-S.ultResp>7*864e5;
     m.innerHTML=`${sinResp?`<div class="card" style="background:#FFF4E5" onclick="respaldar()"><b>⚠️ Hace más de 7 días que no guardás una copia</b><div class="mut">Tocá acá para guardarla en tu WhatsApp</div></div>`:''}
     <div class="chips" style="display:grid;grid-template-columns:repeat(4,1fr)">${['hoy','sem','ant','mes'].map(k=>`<button style="${per===k?'background:var(--a);color:#fff;border-color:var(--a)':''}" onclick="per='${k}';render()">${{hoy:'Hoy',sem:'Semana',ant:'Sem. pasada',mes:'Mes'}[k]}</button>`).join('')}</div>
-    <div class="card"><div class="lbl">${tit}</div><div class="big">${fmt(ef+tr+fi)}</div><div class="mut">${vs.length} ${vs.length===1?'venta':'ventas'}</div></div>
+    <div class="card"><div class="lbl">${tit}</div><div class="big">${fmt(vt)}</div><div class="mut">${vs.length} ${vs.length===1?'venta':'ventas'}${props?' · 💝 '+fmt(props)+' en propinas':''}</div></div>
     <div class="card">
       <div class="kv"><span>📒 Fiado</span><b class="debe">${fmt(fi)}</b></div>
       <div class="kv"><span>↩️ Cobros de fiado</span><b>${fmt(cob.ef+cob.tr)}</b></div>
     </div>
-    ${S.barberos.map((bn,bi)=>{const pc=S.com[bi]||0;const bv=vs.filter(v=>v.barb===bn);const bt=bv.reduce((s,v)=>s+v.total,0);const sv={};bv.forEach(v=>v.items.forEach(i=>{sv[i.n]=(sv[i.n]||0)+i.q}));const bs=md=>bv.filter(v=>v.medio===md).reduce((s,v)=>s+v.total,0);return `<div class="card"><div class="lbl">✂️ ${bn}</div><div style="display:flex;justify-content:space-between;align-items:baseline"><div class="big">${fmt(bt)}</div><div class="mut">${bv.length} ${bv.length===1?'cliente':'clientes'}</div></div>
+    ${S.barberos.map((bn,bi)=>{const pc=S.com[bi]||0;const bv=vs.filter(v=>v.barb===bn);const bt=bv.reduce((s,v)=>s+v.total,0);const sv={};bv.forEach(v=>v.items.forEach(i=>{sv[i.n]=(sv[i.n]||0)+i.q}));const bs=md=>bv.reduce((s,v)=>s+amt(v,md),0);const bp=bv.reduce((s,v)=>s+propOf(v),0);return `<div class="card"><div class="lbl">✂️ ${bn}</div><div style="display:flex;justify-content:space-between;align-items:baseline"><div class="big">${fmt(bt)}</div><div class="mut">${bv.length} ${bv.length===1?'cliente':'clientes'}</div></div>
       <div class="kv"><span>💵 Efectivo</span><b>${fmt(bs('ef'))}</b></div><div class="kv"><span>📲 Mercado Pago</span><b>${fmt(bs('tr'))}</b></div><div class="kv"><span>📒 Fiado</span><b class="debe">${fmt(bs('fi'))}</b></div>
+      ${bp?`<div class="kv"><span>💝 Propinas (todas para ${bn})</span><b style="color:var(--ok)">${fmt(bp)}</b></div>`:''}
       ${pc?`<div style="background:var(--bg);border-radius:14px;padding:12px 14px;margin-top:10px"><div class="kv"><span>💈 Le toca a ${bn} (${pc}%)</span><b style="color:var(--ok)">${fmt(bt*pc/100)}</b></div><div class="kv"><span>🏠 Para la barbería (${100-pc}%)</span><b>${fmt(bt*(100-pc)/100)}</b></div></div>`:''}
       ${Object.keys(sv).length?`<div class="mut" style="margin-top:8px">${Object.entries(sv).sort((a,b)=>b[1]-a[1]).map(([n,q])=>q+'× '+n).join(' · ')}</div>`:''}</div>`}).join('')}
-    ${per==='hoy'?`<div class="card"><div class="lbl">Tenés que tener en la caja</div><div class="big" style="color:var(--ok)">${fmt(ef+cob.ef)}</div><div class="mut">Efectivo de ventas + cobros de fiado en efectivo</div></div>`:
+    ${per==='hoy'?`<div class="card"><div class="lbl">Tenés que tener en la caja</div><div class="big" style="color:var(--ok)">${fmt(ef+cob.ef)}</div><div class="mut">Efectivo de ventas + cobros de fiado en efectivo${propE?' (incluye '+fmt(propE)+' de propinas en efectivo, que son de los barberos)':''}</div></div>`:
     `<div class="card"><div class="lbl">Por día</div>${Object.entries(dias).sort().map(([k,v])=>{const [y,mo,da]=k.split('-');return `<div style="display:flex;align-items:center;gap:10px;padding:6px 0;font-size:14px"><span style="width:44px" class="mut">${da}/${mo}</span><div style="flex:1;height:12px;background:var(--bg);border-radius:6px;overflow:hidden"><div style="width:${v/dmax*100}%;height:100%;background:var(--a);border-radius:6px"></div></div><b style="width:84px;text-align:right">${fmt(v)}</b></div>`}).join('')||'<div class="empty">Sin ventas</div>'}</div>`}
     <div class="card list"><div class="lbl">Lo que más vendés</div>${tops.length?tops.map(([n,x],i)=>`<div class="li"><div><b>${i+1}. ${n}</b><div class="mut">${x.q} ${x.q===1?'vez':'veces'}</div></div><b>${fmt(x.m)}</b></div>`).join(''):'<div class="empty">Todavía no hay ventas</div>'}</div>
-    <div class="card list"><div class="lbl">${per==='hoy'?'Ventas de hoy':'Ventas'} · tocá una para corregirla</div>${vs.length?vs.slice().reverse().slice(0,60).map(v=>`<div class="li" onclick="editVenta('${v.id}')"><div><b>${fmt(v.total)}</b><div class="mut">${per==='hoy'?'':new Date(v.t).toLocaleDateString('es-AR',{day:'numeric',month:'numeric'})+' '}${new Date(v.t).toLocaleTimeString('es-AR',{hour:'2-digit',minute:'2-digit'})}${v.cli?' · 👤 '+v.cli:''}${v.barb?' · ✂️ '+v.barb:''} · ${v.items.map(i=>i.q+'× '+i.n).join(', ')}</div></div><div class="mut">${{ef:'Efectivo',tr:'M. Pago',fi:'Fiado'}[v.medio]} ✎</div></div>`).join(''):'<div class="empty">Sin ventas</div>'}</div>
+    <div class="card list"><div class="lbl">${per==='hoy'?'Ventas de hoy':'Ventas'} · tocá una para corregirla</div>${vs.length?vs.slice().reverse().slice(0,60).map(v=>`<div class="li" onclick="editVenta('${v.id}')"><div><b>${fmt(v.total)}</b><div class="mut">${per==='hoy'?'':new Date(v.t).toLocaleDateString('es-AR',{day:'numeric',month:'numeric'})+' '}${new Date(v.t).toLocaleTimeString('es-AR',{hour:'2-digit',minute:'2-digit'})}${v.cli?' · 👤 '+v.cli:''}${v.barb?' · ✂️ '+v.barb:''} · ${v.items.map(i=>i.q+'× '+i.n).join(', ')}</div></div><div class="mut">${{ef:'Efectivo',tr:'M. Pago',fi:'Fiado',mx:'Mixto'}[v.medio]} ✎</div></div>`).join(''):'<div class="empty">Sin ventas</div>'}</div>
     <button class="btn sec" onclick="compartirCierre()">${per==='hoy'?'Mandar cierre por WhatsApp':'Mandar balance por WhatsApp'}</button>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px"><div class="card" style="margin:0;background:#EAF7EF"><div class="lbl" style="color:var(--ok)">💵 Efectivo</div><div style="font-size:26px;font-weight:800">${fmt(ef+cob.ef)}</div></div><div class="card" style="margin:0;background:#E8F3FF"><div class="lbl" style="color:#0a66c2">📲 Mercado Pago</div><div style="font-size:26px;font-weight:800">${fmt(tr+cob.tr)}</div></div></div>`;
   }
@@ -159,7 +162,7 @@ function render(){
     <div class="card"><div class="lbl">Barberos</div>${S.barberos.map((b,i)=>`<div class="row"><input class="f" style="flex:2" value="${b}" onchange="if(this.value.trim()){S.barberos[${i}]=this.value.trim();save();toast('Guardado ✓')}"><input class="f" style="flex:1" type="number" inputmode="numeric" value="${S.com[i]||0}" onchange="S.com[${i}]=Math.max(0,Math.min(100,+this.value||0));save();toast('Comisión guardada ✓')"></div>`).join('')}<div class="mut">Nombre y % de comisión (0 = dueño)</div></div>
     <div class="card"><div class="lbl">Suscripción 4712web</div><div class="mut" style="margin-bottom:12px">${estadoLic()==='ok'?'✅ Activa hasta fin de '+mesTxt(S.lic):estadoLic()==='gracia'?'⚠️ Venció '+mesTxt(S.lic)+'. Hay tiempo hasta el 10 para renovar':'⏸️ Pausada'}</div><button class="btn sec" onclick="pedirCodigo()">🔑 Poner código del mes</button></div>
     <button class="btn sec" style="margin-bottom:12px" onclick="cambiarClave()">🔒 Cambiar clave</button>
-    <div class="mut" style="text-align:center;margin:-4px 0 12px">Versión 12 · 4712web</div>
+    <div class="mut" style="text-align:center;margin:-4px 0 12px">Versión 13 · 4712web</div>
     <div class="card"><div class="lbl">Copia de seguridad</div><div class="mut" style="margin-bottom:12px">Guardá una copia de tus ventas, fiados y productos en tu WhatsApp. Si cambiás o perdés el celu, la recuperás.${S.ultResp?'<br>Última copia: '+new Date(S.ultResp).toLocaleDateString('es-AR'):''}</div><div class="row"><button class="btn" onclick="respaldar()">💾 Guardar copia</button><button class="btn sec" onclick="$('#fimp').click()">📂 Recuperar</button></div><input type="file" id="fimp" accept=".json,application/json" class="hide" onchange="recuperar(this.files[0])"></div>`;
   }
 }
@@ -185,19 +188,28 @@ function cobrar(){
   barb=null;abrir(`<h3>Cobrar ${fmt(t)}</h3>
   <div class="lbl">¿Quién lo hizo?</div><div class="chips" id="bch" style="display:grid;grid-template-columns:1fr 1fr">${S.barberos.map((b,i)=>`<button onclick="elegirB(${i})">✂️ ${b}</button>`).join('')}</div>
   <input class="f" id="cliN" list="cliL" placeholder="Nombre del cliente" autocomplete="off"><datalist id="cliL">${[...new Set(S.ventas.map(v=>v.cli).filter(Boolean).concat(S.clientes.map(c=>c.n)))].map(n=>`<option value="${n}">`).join('')}</datalist>
+  <div class="lbl">Propina (opcional, es toda del barbero)</div><input class="f" id="prop" type="number" inputmode="numeric" placeholder="$ 0" oninput="vuelto(${t})">
   <div class="lbl">¿Con cuánto paga?</div>
   <div class="chips">${[...new Set([t,Math.ceil(t/1000)*1000,Math.ceil(t/5000)*5000,Math.ceil(t/10000)*10000,20000].filter(x=>x>=t))].slice(0,5).map(x=>`<button onclick="$('#paga').value=${x};vuelto(${t})">${fmt(x)}</button>`).join('')}</div>
   <input class="f" id="paga" type="number" inputmode="numeric" placeholder="Paga con $" oninput="vuelto(${t})">
   <div class="vuelto hide" id="vu"></div>
   <button class="btn ok" style="margin-bottom:10px" onclick="finVenta('ef')">💵 Efectivo</button>
   <button class="btn" style="margin-bottom:10px" onclick="finVenta('tr')">📲 Mercado Pago</button>
+  <button class="btn sec" style="margin-bottom:10px" onclick="mixto(${t})">🔀 Parte efectivo y parte Mercado Pago</button>
   <button class="btn warn" onclick="elegirFiado()">📒 Fiado</button>`);
 }
+const propV=()=>Math.max(0,+(($('#prop')||{}).value)||0);
+function mixto(t){if(barb===null){toast('Elegí quién hizo el trabajo ✂️');return}const pr=propV(),tt=t+pr;window._mx={t,pr,cli:(($('#cliN')||{}).value||'').trim()};
+  abrir(`<h3>🔀 Pago mixto · ${fmt(tt)}</h3>${pr?`<div class="mut" style="margin-bottom:10px">Incluye ${fmt(pr)} de propina</div>`:''}<div class="lbl">💵 En efectivo</div><input class="f" id="mxE" type="number" inputmode="numeric" placeholder="$ 0" oninput="$('#mxT').value=Math.max(0,${tt}-(+this.value||0))">
+  <div class="lbl">📲 Por Mercado Pago</div><input class="f" id="mxT" type="number" inputmode="numeric" placeholder="$ 0" oninput="$('#mxE').value=Math.max(0,${tt}-(+this.value||0))">
+  <button class="btn" onclick="finMixto()">Cobrar</button>`);setTimeout(()=>$('#mxE').focus(),100)}
+function finMixto(){const e=+$('#mxE').value||0,tr=+$('#mxT').value||0,{t,pr,cli}=_mx;if(Math.round(e+tr)!==Math.round(t+pr)){toast('Tiene que sumar '+fmt(t+pr));return}
+  const v={cli:cli||undefined,barb:S.barberos[barb],id:uid(),t:Date.now(),d:hoyKey(),items:cart.map(({n,p,q})=>({n,p,q})),total:t,medio:'mx',pe:e,pt:tr,prop:pr||undefined};S.ventas.push(v);save();cart=[];cerrar();drawCart();toast('Venta guardada ✓')}
 function elegirB(i){barb=i;document.querySelectorAll('#bch button').forEach((b,k)=>{b.style.background=k===i?'var(--a)':'#fff';b.style.color=k===i?'#fff':'';b.style.borderColor=k===i?'var(--a)':''})}
-function vuelto(t){const p=+$('#paga').value,e=$('#vu');if(p>=t){e.classList.remove('hide');e.textContent='Vuelto: '+fmt(p-t)}else e.classList.add('hide')}
+function vuelto(t){t=t+propV();const p=+$('#paga').value,e=$('#vu');if(p>=t){e.classList.remove('hide');e.textContent='Vuelto: '+fmt(p-t)}else e.classList.add('hide')}
 function finVenta(medio,cid){
   if(barb===null){toast('Elegí quién hizo el trabajo ✂️');return}
-  const cn=($('#cliN')||{}).value;const t=totalCart(),v={cli:(cn||'').trim()||undefined,barb:S.barberos[barb],id:uid(),t:Date.now(),d:hoyKey(),items:cart.map(({n,p,q})=>({n,p,q})),total:t,medio};
+  const cn=($('#cliN')||{}).value;const t=totalCart(),v={cli:(cn||'').trim()||undefined,barb:S.barberos[barb],id:uid(),t:Date.now(),d:hoyKey(),items:cart.map(({n,p,q})=>({n,p,q})),total:t,medio,prop:medio==='fi'?undefined:(propV()||undefined)};
   if(cid){const c=S.clientes.find(x=>x.id===cid);v.cli=c.n;v.mid=uid();c.movs.push({id:v.mid,t:Date.now(),tipo:'deuda',m:t,det:v.items.map(i=>i.q+'× '+i.n).join(', ')})}
   S.ventas.push(v);save();cart=[];cerrar();drawCart();toast('Venta guardada ✓');
 }
@@ -229,17 +241,19 @@ function editVenta(id){
   const v=S.ventas.find(x=>x.id===id);if(!v)return;window._ev={barb:v.barb,medio:v.medio};
   abrir(`<h3>Corregir venta</h3><div class="mut" style="margin-bottom:12px">${new Date(v.t).toLocaleString('es-AR',{day:'numeric',month:'numeric',hour:'2-digit',minute:'2-digit'})} · ${v.items.map(i=>i.q+'× '+i.n).join(', ')}</div>
   <div class="lbl">Monto</div><input class="f" id="evM" type="number" inputmode="numeric" value="${v.total}">
+  ${v.medio==='fi'?'':`<div class="lbl">Propina</div><input class="f" id="evPr" type="number" inputmode="numeric" value="${v.prop||''}" placeholder="$ 0">`}
   <div class="lbl">¿Quién lo hizo?</div><div class="chips" id="evB" style="display:grid;grid-template-columns:1fr 1fr">${S.barberos.map(b=>`<button data-b="${b}" onclick="_ev.barb='${b}';pintarEv()">✂️ ${b}</button>`).join('')}</div>
   <div class="lbl">Cliente</div><input class="f" id="evC" value="${v.cli||''}" placeholder="Nombre del cliente" ${v.medio==='fi'?'disabled':''}>
-  <div class="lbl">Cómo pagó</div>${v.medio==='fi'?'<div class="mut" style="margin-bottom:12px">📒 Fiado (para cambiarlo, borrá la venta y cargala de nuevo)</div>':`<div class="chips" id="evP" style="display:grid;grid-template-columns:1fr 1fr">${[['ef','💵 Efectivo'],['tr','📲 M. Pago']].map(([k,t])=>`<button data-p="${k}" onclick="_ev.medio='${k}';pintarEv()">${t}</button>`).join('')}</div>`}
+  <div class="lbl">Cómo pagó</div>${v.medio==='fi'?'<div class="mut" style="margin-bottom:12px">📒 Fiado (para cambiarlo, borrá la venta y cargala de nuevo)</div>':`<div class="chips" id="evP" style="display:grid;grid-template-columns:1fr 1fr 1fr">${[['ef','💵 Efectivo'],['tr','📲 M. Pago'],['mx','🔀 Mixto']].map(([k,t])=>`<button data-p="${k}" onclick="_ev.medio='${k}';pintarEv()">${t}</button>`).join('')}</div><div id="evMx" style="display:none"><div class="row"><input class="f" id="evE" type="number" inputmode="numeric" placeholder="💵 Efectivo" value="${v.pe||''}"><input class="f" id="evT" type="number" inputmode="numeric" placeholder="📲 M. Pago" value="${v.pt||''}"></div></div>`}
   <button class="btn" style="margin-bottom:10px" onclick="guardarEv('${id}')">Guardar cambios</button>
   <button class="btn sec" style="color:#c00" onclick="borrarVenta('${id}')">🗑 Borrar venta</button>`);
   pintarEv();
 }
-function pintarEv(){const on=(b,x)=>{b.style.background=x?'var(--a)':'#fff';b.style.color=x?'#fff':'';b.style.borderColor=x?'var(--a)':''};document.querySelectorAll('#evB button').forEach(b=>on(b,b.dataset.b===_ev.barb));document.querySelectorAll('#evP button').forEach(b=>on(b,b.dataset.p===_ev.medio))}
+function pintarEv(){const on=(b,x)=>{b.style.background=x?'var(--a)':'#fff';b.style.color=x?'#fff':'';b.style.borderColor=x?'var(--a)':''};document.querySelectorAll('#evB button').forEach(b=>on(b,b.dataset.b===_ev.barb));document.querySelectorAll('#evP button').forEach(b=>on(b,b.dataset.p===_ev.medio));const mx=$('#evMx');if(mx)mx.style.display=_ev.medio==='mx'?'block':'none'}
 function guardarEv(id){const v=S.ventas.find(x=>x.id===id);const m=+$('#evM').value;if(!(m>0)){toast('Poné un monto válido');return}
   const mv=movDe(v);if(m!==v.total){if(mv)mv.m.m=m;if(v.items.length===1&&v.items[0].q===1)v.items[0].p=m;else v.items=[{n:v.items.map(i=>i.q+'× '+i.n).join(', '),p:m,q:1}];v.total=m}
-  v.barb=_ev.barb;if(v.medio!=='fi'){v.medio=_ev.medio;const c=$('#evC').value.trim();v.cli=c||undefined}
+  if(v.medio!=='fi'){const pr=Math.max(0,+$('#evPr').value||0);if(_ev.medio==='mx'){const e=+$('#evE').value||0,t2=+$('#evT').value||0;if(Math.round(e+t2)!==Math.round(m+pr)){toast('Efectivo + M. Pago tiene que dar '+fmt(m+pr));return}v.pe=e;v.pt=t2}else{delete v.pe;delete v.pt}v.prop=pr||undefined;v.medio=_ev.medio;const c=$('#evC').value.trim();v.cli=c||undefined}
+  v.barb=_ev.barb;
   save();cerrar();render();toast('Venta corregida ✓')}
 function borrarVenta(id){if(!confirm('¿Borrar esta venta?'))return;const v=S.ventas.find(x=>x.id===id);const mv=movDe(v);if(mv)mv.c.movs=mv.c.movs.filter(x=>x!==mv.m);S.ventas=S.ventas.filter(x=>x.id!==id);save();cerrar();render();toast('Venta borrada ✓')}
 const LSEC='d604914749aff4575c7c04ee',LNOM='Los Martínez';
@@ -261,11 +275,11 @@ function rango(k){const n=new Date(),y=n.getFullYear(),m=n.getMonth(),d=n.getDat
   if(k==='sem')return[new Date(y,m,lun).getTime(),Infinity,'Esta semana (desde el lunes '+f(new Date(y,m,lun))+')'];
   if(k==='ant')return[new Date(y,m,lun-7).getTime(),new Date(y,m,lun).getTime(),'Semana pasada ('+f(new Date(y,m,lun-7))+' al '+f(new Date(y,m,lun-1))+')'];
   return[new Date(y,m,1).getTime(),Infinity,'Este mes'];}
-function compartirCierre(){const [ini,fin,tit]=rango(per);const vs=S.ventas.filter(v=>v.t>=ini&&v.t<fin);const sm=(a,md)=>a.filter(v=>!md||v.medio===md).reduce((s,v)=>s+v.total,0);
+function compartirCierre(){const [ini,fin,tit]=rango(per);const vs=S.ventas.filter(v=>v.t>=ini&&v.t<fin);const sm=(a,md)=>a.reduce((s,v)=>s+amt(v,md),0);const spr=a=>a.reduce((s,v)=>s+propOf(v),0);
   let cob=0;S.clientes.forEach(c=>c.movs.forEach(mv=>{if(mv.tipo==='pago'&&mv.t>=ini&&mv.t<fin)cob+=mv.m}));
-  const pb=S.barberos.map((b,bi)=>{const pc=S.com[bi]||0;const x=vs.filter(v=>v.barb===b),t=sm(x);return `\n✂️ ${b}: ${fmt(t)} (${x.length} ${x.length===1?'cliente':'clientes'})\n   Efectivo ${fmt(sm(x,'ef'))} · M. Pago ${fmt(sm(x,'tr'))} · Fiado ${fmt(sm(x,'fi'))}${pc?`\n   Le toca (${pc}%): ${fmt(t*pc/100)}\n   Para la barbería: ${fmt(t*(100-pc)/100)}`:''}`}).join('');
+  const pb=S.barberos.map((b,bi)=>{const pc=S.com[bi]||0;const x=vs.filter(v=>v.barb===b),t=sm(x);return `\n✂️ ${b}: ${fmt(t)} (${x.length} ${x.length===1?'cliente':'clientes'})\n   Efectivo ${fmt(sm(x,'ef'))} · M. Pago ${fmt(sm(x,'tr'))} · Fiado ${fmt(sm(x,'fi'))}${spr(x)?`\n   Propinas: ${fmt(spr(x))}`:''}${pc?`\n   Le toca (${pc}%): ${fmt(t*pc/100)}\n   Para la barbería: ${fmt(t*(100-pc)/100)}`:''}`}).join('');
   let dias='';if(per!=='hoy'){const dd={};vs.forEach(v=>{const k=dk(v.t);dd[k]=(dd[k]||0)+v.total});dias='\n\nPor día:'+Object.keys(dd).sort().map(k=>{const [y,mo,da]=k.split('-');return `\n${da}/${mo}: ${fmt(dd[k])}`}).join('')}
-  wa((`${per==='hoy'?'Cierre':'Balance'} Los Martínez · ${per==='hoy'?new Date().toLocaleDateString('es-AR'):tit}\nClientes: ${vs.length}\nEfectivo: ${fmt(sm(vs,'ef'))}\nMercado Pago: ${fmt(sm(vs,'tr'))}\nFiado: ${fmt(sm(vs,'fi'))}\nCobros de fiado: ${fmt(cob)}\nTOTAL: ${fmt(sm(vs))}\n${pb}${dias}`))}
+  wa((`${per==='hoy'?'Cierre':'Balance'} Los Martínez · ${per==='hoy'?new Date().toLocaleDateString('es-AR'):tit}\nClientes: ${vs.length}\nEfectivo: ${fmt(sm(vs,'ef'))}\nMercado Pago: ${fmt(sm(vs,'tr'))}\nFiado: ${fmt(sm(vs,'fi'))}\nCobros de fiado: ${fmt(cob)}\nTOTAL: ${fmt(sm(vs))}${spr(vs)?`\nPropinas: ${fmt(spr(vs))}`:''}\n${pb}${dias}`))}
 function editProd(id){
   const p=id?S.prods.find(x=>x.id===id):{n:'',p:''};
   abrir(`<h3>${id?'Editar':'Nuevo'} producto</h3><input class="f" id="pn" placeholder="Nombre" value="${p.n}"><input class="f" id="pp" type="number" inputmode="numeric" placeholder="Precio $" value="${p.p}">
