@@ -89,6 +89,17 @@ ul.plain{margin:6px 0 0;padding-left:18px} ul.plain li{margin:2px 0}
 .bar small{display:block;opacity:.85;font-size:13px}
 .empty{padding:20px 12px;text-align:center;color:var(--muted)}
 [hidden]{display:none!important}
+.chatmode{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-top:12px}
+.chat{display:flex;flex-direction:column;gap:8px;margin-top:10px;padding-bottom:8px}
+.bub{max-width:88%;padding:10px 12px;border-radius:14px;white-space:pre-wrap;overflow-wrap:anywhere;font-size:15px}
+.bub.yo{align-self:flex-end;background:var(--navy);color:#fff;border-bottom-right-radius:4px}
+.bub.el{align-self:flex-start;background:var(--card);border:1px solid var(--line);border-bottom-left-radius:4px}
+.bub .acts{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px;white-space:normal}
+.bub.pens{color:var(--muted);font-style:italic}
+.sugs{display:flex;gap:6px;overflow-x:auto;padding:4px 0;scrollbar-width:none}
+.sugs button{flex:0 0 auto;border:1px solid var(--line);background:var(--card);color:var(--ink);border-radius:99px;padding:7px 12px;font:600 13px var(--body);cursor:pointer;white-space:nowrap}
+.chatin{position:sticky;bottom:0;display:flex;gap:8px;align-items:flex-end;background:var(--bg);padding:8px 0 calc(8px + env(safe-area-inset-bottom,0px))}
+.chatin textarea{resize:none;max-height:140px}
 .toast{position:fixed;left:50%;bottom:90px;transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:10px;z-index:20;font-weight:600;max-width:90vw}
 </style>
 </head>
@@ -99,6 +110,7 @@ ul.plain{margin:6px 0 0;padding-left:18px} ul.plain li{margin:2px 0}
   <nav class="tabs" role="tablist">
     <button class="tab" role="tab" data-t="pedidos" aria-selected="true">Pedidos</button>
     <button class="tab" role="tab" data-t="cargar" aria-selected="false">Cargar</button>
+    <button class="tab" role="tab" data-t="asistente" aria-selected="false">Asistente</button>
     <button class="tab" role="tab" data-t="lista" aria-selected="false">Lista</button>
   </nav>
 </header>
@@ -147,6 +159,26 @@ ul.plain{margin:6px 0 0;padding-left:18px} ul.plain li{margin:2px 0}
   <h2>Agregar productos</h2>
   <input type="search" id="buscar" placeholder="Buscar (ej: tafirol, pilas aa, bic)" autocomplete="off">
   <div id="resultados" class="list" hidden></div>
+</section>
+
+<!-- ASISTENTE -->
+<section id="t-asistente" hidden>
+  <div class="chatmode"><span id="modoTxt" class="small muted"></span><button class="btn alt sm" id="ajIA" type="button">Ajustes</button></div>
+  <div class="card" id="ajustes" hidden>
+    <h3>Asistente con IA</h3>
+    <p class="small muted">Apagado, el asistente funciona en <b>modo prueba</b>: gratis, entiende frases simples. Con la IA activada entiende cualquier cosa; el gasto lo controla el servidor con un límite por mes.</p>
+    <label style="margin-top:8px"><span><input type="checkbox" id="iaOn" style="width:auto"> Usar IA</span></label>
+    <label style="margin-top:8px">Dirección del servidor<input id="iaUrl" placeholder="https://xxxx.supabase.co/functions/v1/asistente" autocomplete="off"></label>
+    <label style="margin-top:8px">Código del distribuidor<input id="iaDist" placeholder="martinez" autocomplete="off"></label>
+    <label style="margin-top:8px">Clave de acceso<input id="iaClave" type="password" autocomplete="off"></label>
+    <div class="row" style="margin-top:10px"><button class="btn" id="iaGuardar" type="button">Guardar</button><span id="iaUso" class="small muted"></span></div>
+  </div>
+  <div id="chat" class="chat" aria-live="polite"></div>
+  <div id="sugs" class="sugs"></div>
+  <form id="chatForm" class="chatin">
+    <textarea id="chatTxt" rows="1" placeholder="Escribí acá…" aria-label="Mensaje al asistente"></textarea>
+    <button class="btn acc" id="chatEnviar" type="submit" aria-label="Enviar">Enviar</button>
+  </form>
 </section>
 
 <!-- LISTA -->
@@ -228,7 +260,7 @@ headerInfo();
 /* ---------- tabs ---------- */
 function tab(t) {
   document.querySelectorAll(".tab").forEach(b => b.setAttribute("aria-selected", b.dataset.t === t ? "true" : "false"));
-  ["pedidos", "cargar", "lista"].forEach(x => $("t-" + x).hidden = x !== t);
+  ["pedidos", "cargar", "asistente", "lista"].forEach(x => $("t-" + x).hidden = x !== t);
   $("bar").hidden = t !== "cargar";
   if (t === "pedidos") renderPedidos();
   window.scrollTo({ top: 0 });
@@ -516,21 +548,41 @@ async function accion(a, id, btn) {
     $("cargarTit").textContent = "Editar pedido · " + p.cliente; tab("cargar"); renderItems(); return;
   }
   if (a === "excel") return excelDe([p], p.cliente, btn);
-  if (a === "boleta") {
-    const old = btn.textContent; btn.disabled = true; btn.textContent = "Armando…";
-    try {
-      const lineas = p.items.map(i => ({ cant: i.q, nombre: showName(i.n) + (i.vn ? " (" + i.vn + ")" : ""), unit: unitPrice(i.p, p.tipo) }));
-      const blob = await Boleta.generar({ cliente: p.cliente, fecha: ddmmyyyy(p.dia), lineas, total: totales(p.items, p.tipo).cob }, { nombre: CFG.nombre, logo: LOGO });
-      await entregar(blob, `boleta ${p.cliente} ${p.dia.slice(8, 10)}-${p.dia.slice(5, 7)}.pdf`.replace(/[\\/:*?"<>|]/g, ""));
-    } catch (e) { console.error(e); toast("Error armando la boleta"); }
-    btn.disabled = false; btn.textContent = old;
-  }
+  if (a === "boleta") return boletaDe(p, btn);
+}
+async function boletaDe(p, btn) {
+  const old = btn.textContent; btn.disabled = true; btn.textContent = "Armando…";
+  try {
+    const lineas = p.items.map(i => ({ cant: i.q, nombre: showName(i.n) + (i.vn ? " (" + i.vn + ")" : ""), unit: unitPrice(i.p, p.tipo) }));
+    const blob = await Boleta.generar({ cliente: p.cliente, fecha: ddmmyyyy(p.dia), lineas, total: totales(p.items, p.tipo).cob }, { nombre: CFG.nombre, logo: LOGO });
+    await entregar(blob, `boleta ${p.cliente} ${p.dia.slice(8, 10)}-${p.dia.slice(5, 7)}.pdf`.replace(/[\\/:*?"<>|]/g, ""));
+  } catch (e) { console.error(e); toast("Error armando la boleta"); }
+  btn.disabled = false; btn.textContent = old;
 }
 $("excelDia").onclick = () => { const dia = $("dia").value; excelDe(PEDIDOS.filter(p => p.dia === dia), "TODOS " + dia.slice(8, 10) + "-" + dia.slice(5, 7), $("excelDia")); };
+
+/* ---------- lo que usa el asistente ---------- */
+function guardarPedidoDirecto(ped) {
+  ped.id = ped.id || Date.now().toString(36); ped.dia = ped.dia || hoyISO(); ped.lista = CAT ? CAT.nombre : "";
+  const ix = PEDIDOS.findIndex(p => p.id === ped.id);
+  if (ix >= 0) PEDIDOS[ix] = ped; else PEDIDOS.push(ped);
+  store.set("pedidos", PEDIDOS); return ped;
+}
+function marcarSinStock(ids) { ids.forEach(id => SS.add(id)); store.set("sinstock", [...SS]); renderMarcados(); }
+function editarEnCargar(ped) {
+  ED = JSON.parse(JSON.stringify(ped)); $("cli").value = ped.cliente; $("tipo").value = ped.tipo; $("vend").value = ped.vend || ""; $("obs").value = ped.obs || "";
+  $("cargarTit").textContent = ped.id && PEDIDOS.some(p => p.id === ped.id) ? "Editar pedido · " + ped.cliente : "Nuevo pedido"; tab("cargar"); renderItems();
+}
+window.Panel = {
+  get CAT() { return CAT; }, get PK() { return PK; }, get PEDIDOS() { return PEDIDOS; }, CFG, MEM,
+  store, key, esc, fmt, showName, hoyISO, ddmmyyyy, toast, tab,
+  unitPrice, totales, sinStock, guardarPedidoDirecto, marcarSinStock, editarEnCargar, excelDe, boletaDe
+};
 
 nuevoPedido();
 renderPedidos();
 if (!CAT) tab("lista");
 </script>
+<script src="js/asistente.js"></script>
 </body>
 </html>
